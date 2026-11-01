@@ -138,7 +138,8 @@
     jira: [['site', 'Site (https://suaempresa.atlassian.net)'], ['email', 'E-mail da conta'], ['token', 'API token', 'password'], ['projeto', 'Chave do projeto (ex.: PAG)'], ['tipo', 'Tipo (padrão: Task)']],
     linear: [['token', 'API key', 'password'], ['time', 'Chave do time (ex.: ENG)']] };
   async function desenharTickets(id) {
-    const el = $('#tickets'), atual = await api('GET', `/api/equipes/${id}/tickets`).catch(() => null);
+    const el = $('#tickets'); let atual = null;
+    try { atual = await api('GET', `/api/equipes/${id}/tickets`); } catch (er) { if (/Rota não encontrada/.test(er.message)) { el.remove(); return; } }   // sem o Cloud, sem integração de tickets
     const campos = (t) => (CAMPOS_TK[t] || []).map(([k, r, tipo]) => `<label class="campo"><span class="so-leitor">${r}</span><input name="${k}" placeholder="${r}" type="${tipo || 'text'}" autocomplete="off" spellcheck="false"></label>`).join('');
     el.innerHTML = `<h2>Tickets</h2><p class="nota">${atual ? `Ligado ao ${{ github: 'GitHub Issues', jira: 'Jira', linear: 'Linear' }[atual.tipo]}: <b>${esc(atual.alvo)}</b>. As atividades das atas viram ticket com um clique.` : 'Ligue o sistema de tickets da equipe e as atividades das atas viram ticket com um clique.'}</p>
       <form id="f-tk" class="pilha" autocomplete="off"><div class="seg-tk">${['github', 'jira', 'linear'].map(t => `<label><input type="radio" name="tipo" value="${t}" ${(atual ? atual.tipo : 'github') === t ? 'checked' : ''}> ${{ github: 'GitHub', jira: 'Jira', linear: 'Linear' }[t]}</label>`).join('')}</div>

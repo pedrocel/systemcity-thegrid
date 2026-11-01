@@ -6,12 +6,8 @@ import { criarServidor } from '../index.mjs';
 
 let app, base;
 let pedidoRecebido = null;
-const ticketsPedidos = [], stripePedidos = [];
-const stripeFalso = async (url, o) => { stripePedidos.push(o.body); return new Response(JSON.stringify({ url: 'https://checkout.stripe.com/c/teste' })); };
-const oauthFalso = async (url, o) => new Response(JSON.stringify(url.includes('/token') ? (String(o.body).includes('code=codigo-bom') && String(o.body).includes('code_verifier=') ? { access_token: 'at' } : {}) : { email: 'gil@gmail.com', email_verified: true, name: 'Gil Souza' }), { status: url.includes('/token') && !String(o.body).includes('codigo-bom') ? 400 : 200 });
-const ticketFalso = async (url, o) => { ticketsPedidos.push({ url, corpo: JSON.parse(o.body), auth: o.headers.authorization }); return new Response(JSON.stringify({ html_url: 'https://github.com/acme/app/issues/7' }), { status: 201 }); };
 process.env.INCIDENTES_TOKEN = 'token-de-teste-123';
-before(async () => { app = criarServidor({ gerarAta: async (pedido) => { pedidoRecebido = pedido; return pedidoRecebido.includes('Post-mortem') ? '# Post-mortem\n\n## Ações para não repetir\n- [ ] **Alarme no gateway** — responsável: tom — prazo: sexta — bairro: pagamentos\n' : '# Ata de teste\n\n## Atividades\n- [ ] **Fazer X** — responsável: max — prazo: sexta — bairro: pedidos\n  Detalhe do X.'; }, corrida: { contagemMs: 100, voltaMinMs: 50 }, comLimites: false, buscarTickets: ticketFalso, buscarOauth: oauthFalso, buscarStripe: stripeFalso, conferirConexao: false }); await new Promise(ok => app.servidor.listen(0, ok)); base = `http://127.0.0.1:${app.servidor.address().port}`; });
+before(async () => { app = criarServidor({ gerarAta: async (pedido) => { pedidoRecebido = pedido; return pedidoRecebido.includes('Post-mortem') ? '# Post-mortem\n\n## Ações para não repetir\n- [ ] **Alarme no gateway** — responsável: tom — prazo: sexta — bairro: pagamentos\n' : '# Ata de teste\n\n## Atividades\n- [ ] **Fazer X** — responsável: max — prazo: sexta — bairro: pedidos\n  Detalhe do X.'; }, corrida: { contagemMs: 100, voltaMinMs: 50 }, comLimites: false, conferirConexao: false }); await new Promise(ok => app.servidor.listen(0, ok)); base = `http://127.0.0.1:${app.servidor.address().port}`; });
 after(() => app.fechar());
 
 async function api(metodo, caminho, corpo, cookie) {
@@ -297,113 +293,6 @@ test('cidade do GitHub: webhook assinado e diferença entre versões', async () 
   assert.equal((await envia(assinar('segredo-errado'), 'ping')).status, 401);
   assert.equal((await envia(assinar(segredo), 'ping')).status, 200);
   assert.equal((await api('GET', `/api/cidades/${c.slug}/webhook`, null, (await pessoa('intrusa')).cookie)).status, 403);
-});
-
-test('linha do tempo: arquivo cai no bairro da pasta mais específica', async () => {
-  const { bairroDoArquivo } = await import('../historia.mjs');
-  const bairros = [{ id: 'api', pastas: ['src'] }, { id: 'pedidos', pastas: ['src/pedidos', 'docs/pedidos.md'] }];
-  assert.equal(bairroDoArquivo('src/pedidos/frete.ts', bairros), 'pedidos');
-  assert.equal(bairroDoArquivo('src/index.ts', bairros), 'api');
-  assert.equal(bairroDoArquivo('docs/pedidos.md', bairros), 'pedidos');
-  assert.equal(bairroDoArquivo('srcx/a.ts', bairros), null, 'prefixo só vale em fronteira de pasta');
-});
-
-test('agente: sem ANTHROPIC_API_KEY explica o que falta', async () => {
-  const ivo2 = await pessoa('ivo2'), c = (await api('POST', '/api/cidades/modelo', { modelo: 'saas' }, ivo2.cookie)).corpo;
-  const guardada = process.env.ANTHROPIC_API_KEY; delete process.env.ANTHROPIC_API_KEY;
-  try { const r = await api('POST', '/api/agentes', { cidade: c.slug, repo: 'dono/repo', pedido: 'corrige' }, ivo2.cookie); assert.equal(r.status, 503); assert.match(r.corpo.erro, /ANTHROPIC_API_KEY/); }
-  finally { if (guardada) process.env.ANTHROPIC_API_KEY = guardada; }
-});
-
-test('tickets: a equipe liga o GitHub e a atividade da ata vira issue', async () => {
-  const ana = await pessoa('ana-tk'), bia = await pessoa('bia-tk');
-  const eq = (await api('POST', '/api/equipes', { nome: 'Pagamentos' }, ana.cookie)).corpo;
-  await api('POST', `/api/equipes/${eq.id}/membros`, { nick: bia.nick }, ana.cookie);
-  assert.equal((await api('PUT', `/api/equipes/${eq.id}/tickets`, { tipo: 'github', repo: 'acme/app', token: 'x' }, bia.cookie)).status, 403, 'membro não liga');
-  assert.equal((await api('PUT', `/api/equipes/${eq.id}/tickets`, { tipo: 'github', repo: 'acme/app' }, ana.cookie)).status, 400, 'falta o token');
-  assert.deepEqual((await api('PUT', `/api/equipes/${eq.id}/tickets`, { tipo: 'github', repo: 'acme/app', token: 'ghp_teste' }, ana.cookie)).corpo, { tipo: 'github', alvo: 'acme/app' });
-  assert.equal(JSON.stringify((await api('GET', `/api/equipes/${eq.id}/tickets`, null, bia.cookie)).corpo).includes('ghp_'), false, 'o token não sai do servidor');
-  const wa = await socket(ana), wb = await socket(bia);
-  for (const w of [wa, wb]) w.send(JSON.stringify({ t: 'chamada:entrar', sala: eq.sala }));
-  await wa.receber(m => m.t === 'chamada' && m.participantes.length === 2);
-  wa.send(JSON.stringify({ t: 'transcricao', sala: eq.sala, ligada: true })); await wb.receber(m => m.t === 'transcricao' && m.ligada);
-  wa.send(JSON.stringify({ t: 'fala', sala: eq.sala, texto: 'Bia, faz o X até sexta?' })); await wb.receber(m => m.t === 'fala');
-  assert.equal((await api('POST', `/api/salas/${eq.sala}/atas`, {}, ana.cookie)).status, 201);
-  const ativ = (await api('GET', `/api/salas/${eq.sala}/atividades`, null, bia.cookie)).corpo[0];
-  const r = await api('POST', `/api/atividades/${ativ.id}/ticket`, {}, bia.cookie);
-  assert.equal(r.status, 200); assert.equal(r.corpo.ticket, 'https://github.com/acme/app/issues/7');
-  assert.equal(ticketsPedidos[0].url, 'https://api.github.com/repos/acme/app/issues'); assert.equal(ticketsPedidos[0].auth, 'Bearer ghp_teste'); assert.equal(ticketsPedidos[0].corpo.title, 'Fazer X');
-  wa.close(); wb.close();
-});
-
-test('entrar com Google: casa pelo e-mail e abre sessão', async () => {
-  assert.deepEqual((await api('GET', '/api/provedores')).corpo, [], 'sem chaves, nenhum provedor');
-  process.env.GOOGLE_CLIENT_ID = 'id-teste'; process.env.GOOGLE_CLIENT_SECRET = 'seg-teste';
-  try {
-    assert.deepEqual((await api('GET', '/api/provedores')).corpo, [{ id: 'google', nome: 'Google' }]);
-    const ida = await fetch(base + '/auth/google', { redirect: 'manual' }); assert.equal(ida.status, 302);
-    const destino = new URL(ida.headers.get('location')); assert.equal(destino.host, 'accounts.google.com'); assert.equal(destino.searchParams.get('code_challenge_method'), 'S256');
-    const ruim = await fetch(base + '/auth/google/volta?code=x&state=inventado', { redirect: 'manual' }); assert.match(ruim.headers.get('location'), /^\/entrar\.html\?erro=/);
-    const volta = await fetch(`${base}/auth/google/volta?code=codigo-bom&state=${destino.searchParams.get('state')}`, { redirect: 'manual' });
-    assert.equal(volta.headers.get('location'), '/equipes.html');
-    const eu = (await api('GET', '/api/eu', null, volta.headers.get('set-cookie').split(';')[0])).corpo; assert.equal(eu.email, 'gil@gmail.com'); assert.equal(eu.nome, 'Gil Souza');
-    assert.equal((await api('POST', '/api/entrar', { email: 'gil@gmail.com', senha: 'qualquer-coisa' })).status, 401, 'conta sem senha não entra por senha');
-  } finally { delete process.env.GOOGLE_CLIENT_ID; delete process.env.GOOGLE_CLIENT_SECRET; }
-});
-
-test('stripe: assinatura abre o checkout e o webhook muda o plano', async () => {
-  const { createHmac } = await import('node:crypto');
-  Object.assign(process.env, { STRIPE_SECRET_KEY: 'sk_test_x', STRIPE_WEBHOOK_SECRET: 'whsec_x', STRIPE_PRECO_TIME: 'price_time' });
-  try {
-    const rita = await pessoa('rita'), eq = (await api('POST', '/api/equipes', { nome: 'Cobrança' }, rita.cookie)).corpo;
-    const s = await api('POST', `/api/equipes/${eq.id}/assinar`, { plano: 'time' }, rita.cookie);
-    assert.equal(s.corpo.url, 'https://checkout.stripe.com/c/teste'); assert.equal(stripePedidos[0].get('line_items[0][price]'), 'price_time'); assert.equal(stripePedidos[0].get('metadata[equipe]'), String(eq.id));
-    const enviar = (ev, segredo = 'whsec_x') => { const corpo = JSON.stringify(ev), t = Math.floor(Date.now() / 1000);
-      return fetch(base + '/api/stripe/webhook', { method: 'POST', body: corpo, headers: { 'content-type': 'application/json', 'stripe-signature': `t=${t},v1=${createHmac('sha256', segredo).update(`${t}.${corpo}`).digest('hex')}` } }); };
-    assert.equal((await enviar({ type: 'checkout.session.completed' }, 'outro')).status, 401, 'assinatura falsa não passa');
-    await enviar({ type: 'checkout.session.completed', data: { object: { metadata: { equipe: String(eq.id), plano: 'time' }, customer: 'cus_1', subscription: 'sub_1' } } });
-    assert.equal(app.db.prepare('SELECT plano FROM equipes WHERE id = ?').get(eq.id).plano, 'time');
-    await enviar({ type: 'customer.subscription.deleted', data: { object: { id: 'sub_1' } } });
-    assert.equal(app.db.prepare('SELECT plano FROM equipes WHERE id = ?').get(eq.id).plano, 'gratis');
-  } finally { for (const k of ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_PRECO_TIME']) delete process.env[k]; }
-});
-
-test('conexões: GitHub, Bitbucket e CodeCommit ligam e desligam, e a credencial não volta ao navegador', async () => {
-  const caio = await pessoa('caio-cx');
-  const ver = async () => (await api('GET', '/api/conexoes', null, caio.cookie)).corpo.conexoes;
-  assert.deepEqual((await ver()).map(c => [c.id, c.conectado]), [['github', false], ['bitbucket', false], ['codecommit', false]]);
-  assert.equal((await api('PUT', '/api/conexoes/bitbucket', { usuario: 'caio@x.dev' }, caio.cookie)).status, 400, 'falta o token');
-  assert.equal((await api('PUT', '/api/conexoes/codecommit', { regiao: 'us-east-1', chave: 'nao-e-chave', segredo: 'x'.repeat(40) }, caio.cookie)).status, 400);
-  assert.equal((await api('PUT', '/api/conexoes/bitbucket', { usuario: 'caio@x.dev', token: 'ATATT-token-de-teste' }, caio.cookie)).status, 200);
-  assert.equal((await api('PUT', '/api/conexoes/codecommit', { regiao: 'sa-east-1', chave: 'AKIAABCDEFGHIJKLMNOP', segredo: 's'.repeat(40) }, caio.cookie)).status, 200);
-  assert.equal((await api('PUT', '/api/conexoes/github', { token: 'ghp_' + 'a'.repeat(36) }, caio.cookie)).status, 200);
-  const lista = await ver(); assert.ok(lista.every(c => c.conectado)); assert.equal(JSON.stringify(lista).includes('ATATT'), false);
-  assert.equal((await api('DELETE', '/api/conexoes/bitbucket', null, caio.cookie)).status, 200);
-  assert.equal((await ver()).find(c => c.id === 'bitbucket').conectado, false);
-  assert.equal((await api('PUT', '/api/conexoes/gitlab', {}, caio.cookie)).status, 404);
-});
-
-test('kiwify: compra aprovada vira Pro, cancelamento vale até o fim do período, reembolso tira na hora', async () => {
-  const { createHmac } = await import('node:crypto'); process.env.KIWIFY_TOKEN = 'tok-kiwi'; process.env.KIWIFY_CHECKOUT = 'https://pay.kiwify.com.br/teste';
-  try {
-    const kim = await pessoa('kim-kw');
-    const enviar = (ev, token = 'tok-kiwi') => { const corpo = JSON.stringify(ev);
-      return fetch(`${base}/api/kiwify/webhook?signature=${createHmac('sha1', token).update(corpo).digest('hex')}`, { method: 'POST', body: corpo, headers: { 'content-type': 'application/json' } }); };
-    const plano = async () => (await api('GET', '/api/eu', null, kim.cookie)).corpo.plano;
-    assert.equal(await plano(), 'gratis');
-    assert.equal((await enviar({ webhook_event_type: 'order_approved', Customer: { email: 'kim-kw@teste.com' } }, 'outro')).status, 401, 'assinatura falsa não passa');
-    const daqui30 = new Date(Date.now() + 30 * 864e5).toISOString();
-    await enviar({ webhook_event_type: 'order_approved', order_id: 'p1', order_status: 'paid', Customer: { email: 'KIM-KW@teste.com' }, Subscription: { id: 's1', next_payment: daqui30 } });
-    assert.equal(await plano(), 'pro');
-    assert.equal((await api('GET', '/api/assinatura', null, kim.cookie)).corpo.url, 'https://pay.kiwify.com.br/teste');
-    await enviar({ webhook_event_type: 'subscription_canceled', subscription_id: 's1', Customer: { email: 'kim-kw@teste.com' }, Subscription: { status: 'canceled', next_payment: daqui30 } });
-    assert.equal(await plano(), 'pro', 'cancelou, mas o mês pago continua valendo');
-    await enviar({ webhook_event_type: 'order_refunded', order_status: 'refunded', Customer: { email: 'kim-kw@teste.com' }, customer_access: { has_access: false } });
-    assert.equal(await plano(), 'gratis');
-    // quem compra antes de ter conta vira Pro ao se cadastrar com o mesmo e-mail
-    await enviar({ webhook_event_type: 'order_approved', Customer: { email: 'novo-kw@teste.com' }, Subscription: { next_payment: daqui30 } });
-    const novo = await pessoa('novo-kw'); assert.equal((await api('GET', '/api/eu', null, novo.cookie)).corpo.plano, 'pro');
-  } finally { delete process.env.KIWIFY_TOKEN; delete process.env.KIWIFY_CHECKOUT; }
 });
 
 test('custos de IA: cada chamada é anotada com quem pediu e o tipo, e o admin vê o relatório', async () => {

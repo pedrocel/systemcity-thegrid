@@ -30,7 +30,7 @@ O CI roda os dois em todo Pull Request. Recurso novo vem com teste.
 - **Sem build e sem framework no front.** As páginas são HTML e JavaScript puros, e o motor 3D usa Three.js r128 sem bundler. Mantenha assim.
 - **Leia o arquivo ao redor e escreva igual:** nomes em português, o mesmo jeito de comentar, a mesma densidade.
 - **No servidor**, cada assunto é um módulo em `servidor/` (`cidades.mjs`, `auditoria.mjs`, `fontes.mjs`...) e as rotas ficam em `index.mjs`. Erros que a pessoa deve ver são `ErroUso`, com mensagem em português claro.
-- **Dependência nova** precisa de um bom motivo. Hoje o servidor depende só de `ws`, do SDK da Anthropic e do cliente do CodeCommit.
+- **Dependência nova** precisa de um bom motivo. Hoje o servidor depende só de `ws` e do SDK da Anthropic.
 - **Textos da interface** em português do Brasil, curtos e diretos.
 
 ## Pull Requests

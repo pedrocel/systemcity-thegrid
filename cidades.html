@@ -144,6 +144,7 @@
   if (eu === undefined) { $('#painel').innerHTML = '<p class="vazio">Esta página precisa do servidor do SystemCity ligado.</p>'; return; }
 
   { const pl = $('#plano-pill'), pro = eu.plano && eu.plano !== 'gratis'; pl.innerHTML = pro ? ({ pro: 'Pro', time: 'Time', empresa: 'Empresa' }[eu.plano] || esc(eu.plano)) : 'Grátis<span class="so-largo"> · assinar Pro</span>'; pl.classList.toggle('pro', pro); }
+  const MULTI = !!(eu.recursos && eu.recursos.universos);
   const PROV = { github: ['GitHub', 'GH', '#e6edf3'], bitbucket: ['Bitbucket', 'BB', '#4c9aff'], codecommit: ['CodeCommit', 'CC', '#ff9900'], modelo: ['Modelo', 'M', '#a78bfa'] };
   const provDe = (fonte) => String(fonte).split(':')[0];
   const glifo = (p) => `<i class="glifo" style="--c:${PROV[p][2]}" title="${PROV[p][0]}">${PROV[p][1]}</i>`;
@@ -210,7 +211,7 @@
     $('#n-proj').textContent = conta('todos');
     const cartoes = unis.map(cartaoUniverso).concat(soltas.map(cartaoCidade));
     $('#grade').innerHTML = cartoes.length ? cartoes.join('') + (P.filtro === 'todos' ? '<button class="novo-card" id="novo-card"><span><i>+</i>Novo projeto</span></button>' : '')
-      : `<div class="vazio-g" style="grid-column:1/-1"><b>Nenhum projeto ainda</b><span>Conecte o GitHub, o Bitbucket ou o CodeCommit e escolha os repositórios.</span><button class="btn primario p" id="novo-vazio">Novo projeto</button></div>`;
+      : `<div class="vazio-g" style="grid-column:1/-1"><b>Nenhum projeto ainda</b><span>Conecte ${((eu.recursos && eu.recursos.provedores) || ['github']).map(p => PROV[p][0]).join(', ').replace(/, ([^,]*)$/, ' ou $1')} e escolha ${MULTI ? 'os repositórios' : 'o repositório'}.</span><button class="btn primario p" id="novo-vazio">Novo projeto</button></div>`;
     filtrarBusca(); ligarAcoes();
   }
   function filtrarBusca() { const q = P.busca; $$('#grade .proj').forEach(el => { el.hidden = !!q && !el.dataset.busca.includes(q); }); }
@@ -274,19 +275,20 @@
     $('#repos').innerHTML = R.erros.map(e => `<p class="erro" style="padding:8px 12px">${esc((PROV[e.provedor] || [''])[0])}: ${esc(e.erro)}</p>`).join('') + (lista.length ? lista.map(r => `<label class="repo"><input type="checkbox" value="${esc(r.fonte)}" ${R.escolhidos.has(r.fonte) ? 'checked' : ''}>${glifo(r.provedor)}
         <span><b style="font-weight:500">${esc(r.repo)}${r.privado ? '<i class="priv">privado</i>' : ''}</b>${r.descricao ? `<small>${esc(r.descricao)}</small>` : ''}</span>${r.atualizado ? `<time>${ha(r.atualizado)}</time>` : ''}</label>`).join('')
       : `<div class="sem-conta">${q ? 'Nada com esse nome.' : 'Nenhum repositório nas contas conectadas.'}</div>`);
-    $$('#repos input').forEach(c => c.onchange = () => { if (c.checked) R.escolhidos.set(c.value, true); else R.escolhidos.delete(c.value); desenharEscolhidos(); });
+    // juntar vários repositórios numa cidade é do Cloud; no núcleo, um por vez
+    $$('#repos input').forEach(c => c.onchange = () => { if (c.checked) { if (!MULTI) { R.escolhidos.clear(); $$('#repos input').forEach(x => { if (x !== c) x.checked = false; }); } R.escolhidos.set(c.value, true); } else R.escolhidos.delete(c.value); desenharEscolhidos(); });
   }
   function desenharEscolhidos() {
     const n = R.escolhidos.size, b = $('#b-gerar'); b.disabled = !n;
     b.textContent = R.universo ? (n > 1 ? `Adicionar ${n}` : 'Adicionar') : n > 1 ? `Juntar ${n} numa cidade` : 'Criar';
-    $('#dica-novo').textContent = R.universo ? 'Cada repositório vira uma região do projeto.' : n > 1 ? 'Cada repositório vira uma região; o Claude liga um ao outro.' : 'Marque vários para juntar numa cidade só.';
+    $('#dica-novo').textContent = R.universo ? 'Cada repositório vira uma região do projeto.' : n > 1 ? 'Cada repositório vira uma região; o Claude liga um ao outro.' : (MULTI ? 'Marque vários para juntar numa cidade só.' : 'Escolha o repositório.');
     $('#escolhidos').innerHTML = [...R.escolhidos.keys()].map(f => `<span>${esc(f.replace(/^\w+:/, ''))}<button type="button" data-tira="${esc(f)}" aria-label="Tirar">×</button></span>`).join('');
     $$('[data-tira]').forEach(x => x.onclick = () => { R.escolhidos.delete(x.dataset.tira); desenharRepos(); desenharEscolhidos(); });
   }
   $('#busca-repo').oninput = desenharRepos;
   $('#add-manual').onclick = () => { let v = $('#repo-manual').value.trim(); if (!v) return;
     if (!/^(github|bitbucket|codecommit):/.test(v)) v = /bitbucket\.org/.test(v) ? 'bitbucket:' + v.replace(/^https?:\/\/bitbucket\.org\//, '').split('/').slice(0, 2).join('/') : 'github:' + v.replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '').split('/').slice(0, 2).join('/');
-    R.escolhidos.set(v, true); $('#repo-manual').value = ''; desenharEscolhidos(); };
+    if (!MULTI) R.escolhidos.clear(); R.escolhidos.set(v, true); $('#repo-manual').value = ''; desenharRepos(); desenharEscolhidos(); };
   const progresso = (txt) => { $('#progresso').classList.toggle('ativo', !!txt); $('#progresso-txt').textContent = txt || ''; };
   async function adicionarRepos(slug, fontes) { const falhas = [];
     for (const [i, f] of fontes.entries()) { progresso(`Gerando ${f.replace(/^\w+:/, '')} (${i + 1}/${fontes.length})… leva de 1 a 3 minutos cada.`);

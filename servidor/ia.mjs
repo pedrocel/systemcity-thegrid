@@ -3,12 +3,12 @@
 //   - sem a chave (o caso da máquina de quem desenvolve): o Claude Code instalado (`claude -p`, sem ferramentas).
 // Quem chama só passa o pedido e recebe o texto. `json: true` pede e devolve um objeto.
 //
-// CLAUDE_MODELO  modelo na API (padrão: claude-opus-5-5) · CLAUDE_CMD  caminho do Claude Code (padrão: claude)
+// CLAUDE_MODELO  modelo na API (padrão: claude-haiku-5-5, o mais barato) · CLAUDE_CMD  caminho do Claude Code (padrão: claude)
 import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { anotar } from './custos.mjs';
 
-const LIMITE_MS = 8 * 60e3, MODELO = process.env.CLAUDE_MODELO || 'claude-opus-5-5';
+const LIMITE_MS = 8 * 60e3, MODELO = process.env.CLAUDE_MODELO || 'claude-haiku-5-5';
 let cliente = null;
 
 export const iaDisponivel = () => !!process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_CMD !== '';

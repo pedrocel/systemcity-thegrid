@@ -48,7 +48,7 @@ document.getElementById('app').insertAdjacentHTML('beforeend', `
     <header><span id="enc-ch-tit"></span><small id="enc-ch-sub"></small></header>
     <div class="enc-videos" id="enc-videos"></div>
     <div class="enc-legenda" id="enc-legenda" aria-live="polite" hidden></div>
-    <div class="enc-controles"><button class="bt" id="enc-mic" aria-pressed="true">Microfone</button><button class="bt" id="enc-cam" aria-pressed="true">Câmera</button><button class="bt" id="enc-tela" aria-pressed="false">Compartilhar tela</button><button class="bt" id="enc-transcrever" aria-pressed="false" title="Transcreve a chamada para o Claude gerar as atividades no fim">Transcrever</button><label class="enc-motor" title="Quem reconhece a sua voz"><span class="so-leitor">Reconhecimento de voz</span><select id="enc-motor"><option value="navegador">Voz: navegador</option><option value="whisper">Voz: Whisper local</option></select></label><button class="bt rubi" id="enc-desligar">Sair da chamada</button></div>
+    <div class="enc-controles"><button class="bt" id="enc-mic" aria-pressed="true">Microfone</button><button class="bt" id="enc-cam" aria-pressed="true">Câmera</button><button class="bt" id="enc-tela" aria-pressed="false">Compartilhar tela</button><button class="bt" id="enc-transcrever" aria-pressed="false" title="Transcreve a chamada para o Claude gerar as atividades no fim">Transcrever</button><label class="enc-motor" title="Quem reconhece a sua voz" hidden><span class="so-leitor">Reconhecimento de voz</span><select id="enc-motor"><option value="navegador">Voz: navegador</option><option value="whisper">Voz: Whisper local</option></select></label><button class="bt rubi" id="enc-desligar">Sair da chamada</button></div>
   </section>`);
 const painel = $('#encontros'), corpo = $('#enc-corpo'), entrada = $('#enc-entrada');
 
@@ -254,7 +254,7 @@ $('#enc-tela').addEventListener('click', async (e) => {
 // Dois jeitos de reconhecer a voz: a Web Speech API (no Chrome, o áudio vai aos servidores do Google) ou o Whisper local,
 // que roda no próprio navegador e não deixa a voz sair da máquina. Sem Web Speech (Firefox, Safari), vai o Whisper.
 const Reconhecer = window.SpeechRecognition || window.webkitSpeechRecognition;
-const motor = () => { try { return localStorage.getItem('sc-voz') || (Reconhecer ? 'navegador' : 'whisper'); } catch { return Reconhecer ? 'navegador' : 'whisper'; } };
+const motor = () => { if (!window.SystemCityWhisper) return 'navegador'; try { return localStorage.getItem('sc-voz') || (Reconhecer ? 'navegador' : 'whisper'); } catch { return Reconhecer ? 'navegador' : 'whisper'; } };
 $('#enc-motor').value = motor();
 $('#enc-motor').addEventListener('change', (e) => { try { localStorage.setItem('sc-voz', e.target.value); } catch {} if (rec) { pararRec(); ajustarTranscricao(); } });
 let rec = null;
@@ -321,7 +321,7 @@ function desenharAta() {
 async function abrirTicket(x) {
   // com a integração da equipe ligada, o servidor cria o ticket direto no GitHub, Jira ou Linear
   try { const y = await api('POST', `/api/atividades/${x.id}/ticket`, {}); Object.assign(x, y); desenhar(); avisar('Ticket criado.'); return; }
-  catch (e) { if (!/não tem um sistema de tickets/.test(e.message)) return alert(e.message); }
+  catch (e) { if (!/não tem um sistema de tickets|Rota não encontrada/.test(e.message)) return alert(e.message); }   // sem a integração (ou sem o Cloud), cai no jeito manual
   const corpoTxt = `${x.descricao || ''}\n\nResponsável: ${x.responsavel || 'a definir'}\nPrazo: ${x.prazo || 'a definir'}${x.bairro ? `\nMódulo: ${(C.BAIRRO[x.bairro] || {}).nome || x.bairro}` : ''}\n\nCombinado na ata "${E.vista.ata.titulo}" (SystemCity).`;
   if (E.eu.ticketsUrl) window.open(E.eu.ticketsUrl.replace('{titulo}', encodeURIComponent(x.titulo)).replace('{corpo}', encodeURIComponent(corpoTxt)), '_blank', 'noopener');
   else { await navigator.clipboard.writeText(`${x.titulo}\n\n${corpoTxt}`).catch(() => {}); avisar(`Texto do ticket copiado. Cole no ${E.eu.tickets || 'seu sistema de tickets'}.`); }

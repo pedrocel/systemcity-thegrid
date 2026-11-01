@@ -1,0 +1,35 @@
+# Demo ao vivo no GitHub Pages: o motor 3D com a cidade de exemplo, sem servidor.
+name: Demo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Montar o site da demo
+        run: |
+          mkdir _site
+          cp -R cidade.html engine cities site _site/
+          # a raiz da demo abre direto a cidade
+          printf '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=cidade.html"><title>SystemCity</title><a href="cidade.html">SystemCity</a>\n' > _site/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+      - id: deploy
+        uses: actions/deploy-pages@v4

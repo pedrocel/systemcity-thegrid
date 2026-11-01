@@ -17,12 +17,8 @@ import { tempoReal } from './tempo-real.mjs';
 import { montarPedido, gerarComClaude } from './atas.mjs';
 import { corridas as criarCorridas } from './corridas.mjs';
 import { equipes as criarEquipes } from './equipes.mjs';
-import { tickets as criarTickets } from './tickets.mjs';
-import { oauth as criarOauth, provedoresLigados, conectarGithub, githubOauthLigado } from './oauth.mjs';
-import { conexoes as criarConexoes } from './fontes.mjs';
+import { conexoes as criarConexoes, FONTES } from './fontes.mjs';
 import { custos as criarCustos, comUso } from './custos.mjs';
-import { kiwify as criarKiwify, kiwifyLigada } from './kiwify.mjs';
-import { cobranca as criarCobranca, cobrancaLigada } from './cobranca.mjs';
 import { cidades as criarCidades } from './cidades.mjs';
 import { comoRoda } from './ia.mjs';
 import { assistente as criarAssistente } from './assistente.mjs';
@@ -31,17 +27,15 @@ import { replay as criarReplay } from './replay.mjs';
 import { planos as criarPlanos, PLANOS } from './planos.mjs';
 import { limitador, ipDe } from './limites.mjs';
 import { enviarEmail, emailLigado } from './email.mjs';
-import { universos as criarUniversos } from './universos.mjs';
-import { historia as criarHistoria } from './historia.mjs';
-import { auditorias as criarAuditorias } from './auditoria.mjs';
-import { agentes as criarAgentes } from './agente.mjs';
 
 const RAIZ = resolve(fileURLToPath(import.meta.url), '../..');
+// a edição Cloud (servidor/cloud/) entra por cima do núcleo quando existe; a versão da comunidade vem sem ela
+const Cloud = existsSync(join(RAIZ, 'servidor/cloud/index.mjs')) && process.env.SEM_CLOUD !== '1' ? await import('./cloud/index.mjs') : null;
 const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json', '.jpg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml', '.md': 'text/markdown; charset=utf-8' };
 const PROIBIDO = /(^|\/)(servidor|bridge|node_modules|scripts|\.git)(\/|$)|(^|\/)\./;   // só a cidade é pública
 
-export function criarServidor({ banco = ':memory:', origens = null, seguro = false, tls = null, gerarAta = gerarComClaude, corrida = {}, comLimites = true, auditoria: opAuditoria = {}, buscarTickets = fetch, buscarOauth = fetch, buscarStripe = fetch, conferirConexao = true } = {}) {
+export function criarServidor({ banco = ':memory:', origens = null, seguro = false, tls = null, gerarAta = gerarComClaude, corrida = {}, comLimites = true, conferirConexao = true, cloud: opCloud = {} } = {}) {
   const db = abrir(banco), contas = criarContas(db), conversas = criarConversas(db);
   // cada requisição carrega quem pediu e o tipo de trabalho: as chamadas ao Claude que ela fizer (agora ou em segundo plano) são contadas nessa conta
   // admins: e-mails em ADMINS (separados por vírgula); veem o painel de custos
@@ -53,7 +47,11 @@ export function criarServidor({ banco = ':memory:', origens = null, seguro = fal
     return comUso({ usuario: quem ? quem.id : null, tipo: tipoDe(req.url || ''), registrar: custos.registrar }, () => atender(req, res)).catch(e => falhar(res, e)); };
   const servidor = tls ? https.createServer(tls, tratar) : http.createServer(tratar);
   const ganchos = {}, rt = tempoReal(servidor, { contas, conversas, origens, ganchos }), corridas = criarCorridas({ db, conversas, contas, rt, ...corrida });
-  const equipes = criarEquipes(db, { contas, conversas }), custos = criarCustos(db), assinaturas = criarKiwify(db), conexoes = criarConexoes(db), ghConexao = conectarGithub({ conexoes, buscar: buscarOauth }), cidades = criarCidades(db, { equipes, conexoes }), assistente = criarAssistente({ cidades, conversas, equipes }), incidentes = criarIncidentes(db, { cidades, conversas, equipes, contas, rt, gerar: gerarAta }), replay = criarReplay(db, { cidades }), planos = criarPlanos(db, { assinaturas, custos }), tickets = criarTickets(db, { equipes, conversas, buscar: buscarTickets }), social = criarOauth({ contas, buscar: buscarOauth }), cobranca = criarCobranca(db, { equipes, buscar: buscarStripe }), universos = criarUniversos(db, { cidades, equipes }), agentes = criarAgentes(db, { contas, rt, cidades }), historia = criarHistoria(db, { cidades, get universos() { return universos; } }), auditorias = criarAuditorias(db, { cidades, agentes, conexoes, ...opAuditoria }), limite = comLimites ? limitador() : { contar() {}, zerar() {}, fechar() {} };
+  const equipes = criarEquipes(db, { contas, conversas }), custos = criarCustos(db), conexoes = criarConexoes(db), cidades = criarCidades(db, { equipes, conexoes }), assistente = criarAssistente({ cidades, conversas, equipes }), incidentes = criarIncidentes(db, { cidades, conversas, equipes, contas, rt, gerar: gerarAta }), replay = criarReplay(db, { cidades }), limite = comLimites ? limitador() : { contar() {}, zerar() {}, fechar() {} };
+  const ctxCloud = { db, contas, conversas, equipes, cidades, conexoes, rt, limite, get planos() { return planos; }, json: (...a) => json(...a), corpo: (r) => corpo(r), cookie: (...a) => cookie(...a), origemDe: (r) => origemDe(r),
+    quem: (req) => contas.deToken(lerCookie(req, contas.COOKIE)), limiteIA: (u) => limite.contar(`ia:${u}`, Number(process.env.IA_POR_HORA) || 60, 3600e3, 'Você chegou ao limite de pedidos ao Claude nesta hora.') };
+  const cloud = Cloud ? Cloud.criarCloud(ctxCloud, opCloud) : null, planos = criarPlanos(db, { assinaturas: cloud && cloud.assinaturas, custos });
+  const RECURSOS = cloud ? cloud.RECURSOS : { provedores: Object.keys(FONTES) };
   ganchos.mensagem = (u, m) => corridas.mensagem(u, m); ganchos.saiu = (u) => corridas.saiu(u);
   const gerando = new Set();   // salas com ata sendo gerada agora: uma por vez
   const limpeza = setInterval(() => contas.limparVencidas(), 3600e3); limpeza.unref();
@@ -68,13 +66,7 @@ export function criarServidor({ banco = ':memory:', origens = null, seguro = fal
     const url = new URL(req.url, 'http://x'), caminho = url.pathname;
     if (caminho === '/saude') return json(res, 200, { ok: true });   // para o deploy e o monitoramento saberem que está de pé
     if (!caminho.startsWith('/api/') && !caminho.startsWith('/auth/') && !caminho.startsWith('/conectar/')) return estatico(caminho, res);
-    // o universo, como um mapa só (mesmo formato de cidade.js)
-    { const mu = caminho.match(/^\/api\/universos\/([a-z0-9-]+)\/(cidade|catalogo|textos-([a-z0-9-]+))\.js$/);
-      if (mu && req.method === 'GET') { const eu = contas.deToken(lerCookie(req, contas.COOKIE)); if (!eu) { res.writeHead(401).end(); return; }
-        const { M, catalogo, textos } = universos.compor(mu[1], eu.id);
-        const js = mu[2] === 'cidade' ? `SystemCity.definir(${JSON.stringify({ ...M, catalogo: 'catalogo.js' })});\n` : mu[2] === 'catalogo' ? `window.CIDADE_SPECS = ${JSON.stringify(catalogo)};\n`
-          : `(window.CIDADE_TEXTOS = window.CIDADE_TEXTOS || {})[${JSON.stringify(mu[3])}] = ${JSON.stringify(textos[mu[3]] || {})};\n`;
-        res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-store' }); return res.end(js); } }
+    if (cloud && await cloud.antes(req, res, `${req.method} ${caminho}`, caminho)) return;
     // a cidade guardada no banco, como JS para a página: só para quem pode vê-la
     { const mc = caminho.match(/^\/api\/cidades\/([a-z0-9-]+)\/(cidade|catalogo|textos-([a-z0-9-]+))\.js$/);
       if (mc && req.method === 'GET') { const eu = contas.deToken(lerCookie(req, contas.COOKIE)); if (!eu) { res.writeHead(401).end(); return; }
@@ -92,21 +84,10 @@ export function criarServidor({ banco = ':memory:', origens = null, seguro = fal
       if (evento === 'ping') return json(res, 200, { ok: true });
       const p = JSON.parse(bruto); if (evento !== 'push' || p.ref !== `refs/heads/${(p.repository || {}).default_branch}`) return json(res, 202, { ignorado: true });
       json(res, 202, { regerando: true }); regerarEAvisar(c.slug, null, (p.head_commit || {}).id); return; } }
-    if (r === 'POST /api/kiwify/webhook') { let bruto = ''; for await (const p of req) { bruto += p; if (bruto.length > 1e6) throw new ErroUso('Corpo grande demais.', 413); }
-      return json(res, 200, assinaturas.webhook(new URL(req.url, 'http://x').searchParams.get('signature'), bruto)); }
-    if (r === 'POST /api/stripe/webhook') { let bruto = ''; for await (const p of req) { bruto += p; if (bruto.length > 1e6) throw new ErroUso('Corpo grande demais.', 413); }
-      return json(res, 200, cobranca.webhook(req.headers['stripe-signature'], bruto)); }
     if (r === 'POST /api/incidentes/webhook') return json(res, 201, incidentes.webhook(req.headers['x-systemcity-token'], await corpo(req)));   // alertas de fora: autentica pelo token, não pelo cookie
 
     const ip = ipDe(req);
-    if (r === 'GET /api/provedores') return json(res, 200, provedoresLigados());
-    { const mo = caminho.match(/^\/auth\/(google|microsoft)(\/volta)?$/); if (mo && req.method === 'GET') {
-      limite.contar(`oauth:${ip}`, 30, 600e3);
-      if (!mo[2]) { res.writeHead(302, { location: social.inicio(mo[1], origemDe(req)), 'cache-control': 'no-store' }); return res.end(); }
-      const q = Object.fromEntries(new URL(req.url, 'http://x').searchParams);
-      try { const { token: t } = await social.volta(mo[1], origemDe(req), q); res.writeHead(302, { location: '/equipes.html', 'set-cookie': cookie(t, contas.DIAS_SESSAO * 86400), 'cache-control': 'no-store' }); }
-      catch (e) { res.writeHead(302, { location: `/entrar.html?erro=${encodeURIComponent(e.message)}` }); }
-      return res.end(); } }
+    if (cloud && await cloud.publico(req, res, r, caminho, ip, limite)) return;
     if (r === 'POST /api/cadastro') { limite.contar(`cad:${ip}`, 10, 3600e3, 'Muitas contas criadas daqui.'); const { usuario, token: t } = contas.cadastrar(await corpo(req)); return json(res, 201, usuario, { 'set-cookie': cookie(t, contas.DIAS_SESSAO * 86400) }); }
     if (r === 'POST /api/entrar') { const dados = await corpo(req), quem = String(dados.email || '').trim().toLowerCase();
       limite.contar(`ent-ip:${ip}`, 30, 900e3, 'Muitas tentativas de login daqui.'); limite.contar(`ent:${quem}`, 8, 900e3, 'Muitas tentativas para esta conta.');
@@ -122,7 +103,7 @@ export function criarServidor({ banco = ':memory:', origens = null, seguro = fal
     if (!eu) throw new ErroUso('Entre na sua conta.', 401);
     const u = eu.id, id = Number((caminho.match(/^\/api\/(?:salas|reunioes|atas|corridas|equipes)\/(\d+)/) || [])[1]);
 
-    if (r === 'GET /api/eu') return json(res, 200, { ...eu, plano: planos.daPessoa(u), admin: (process.env.ADMINS || '').toLowerCase().split(',').map(x => x.trim()).includes(eu.email), githubConectado: cidades.githubConectado(u), ia: comoRoda(), ticketsUrl: process.env.TICKETS_NOVO_URL || null, tickets: process.env.SISTEMA_TICKETS || null });
+    if (r === 'GET /api/eu') return json(res, 200, { ...eu, recursos: RECURSOS, plano: planos.daPessoa(u), admin: (process.env.ADMINS || '').toLowerCase().split(',').map(x => x.trim()).includes(eu.email), githubConectado: cidades.githubConectado(u), ia: comoRoda(), ticketsUrl: process.env.TICKETS_NOVO_URL || null, tickets: process.env.SISTEMA_TICKETS || null });
     if (r === 'POST /api/cidade/roteiro') return json(res, 200, await assistente.roteiro(u, await corpo(req)));
     if (/^POST \/api\/(cidade\/(perguntar|roteiro)|cidades\/github|salas\/\d+\/atas|incidentes\/\d+\/resolver)$/.test(r)) limite.contar(`ia:${u}`, Number(process.env.IA_POR_HORA) || 60, 3600e3, 'Você chegou ao limite de pedidos ao Claude nesta hora.');   // a chave da Anthropic é sua: sem freio, uma pessoa gasta por todas
     if (r === 'POST /api/cidade/perguntar') { planos.podeUsarIA(u); planos.podePerguntar(u); }
@@ -137,43 +118,17 @@ export function criarServidor({ banco = ':memory:', origens = null, seguro = fal
     { const mw = caminho.match(/^\/api\/cidades\/([a-z0-9-]+)\/(webhook|regerar)$/); if (mw) {
       if (mw[2] === 'webhook' && req.method === 'GET') return json(res, 200, { url: `${origemDe(req)}/api/cidades/${mw[1]}/github`, segredo: cidades.webhookDe(mw[1], u) });
       if (mw[2] === 'regerar' && req.method === 'POST') { limite.contar(`ia:${u}`, Number(process.env.IA_POR_HORA) || 60, 3600e3, 'Você chegou ao limite de pedidos ao Claude nesta hora.'); return json(res, 200, await regerarEAvisar(mw[1], u)); } } }
-    { const ma = caminho.match(/^\/api\/cidades\/([a-z0-9-]+)\/auditoria(?:\/(\d+)\/achados\/(\d+)\/corrigir)?$/); if (ma) {
-      if (req.method === 'GET' && !ma[2]) return json(res, 200, auditorias.ver(ma[1], u));
-      if (req.method === 'POST' && !ma[2]) { planos.podeAuditar(u); planos.podeUsarIA(u); limite.contar(`ia:${u}`, Number(process.env.IA_POR_HORA) || 60, 3600e3, 'Você chegou ao limite de pedidos ao Claude nesta hora.'); return json(res, 202, auditorias.iniciar(ma[1], u)); }
-      if (req.method === 'POST') return json(res, 201, await auditorias.corrigir(ma[1], u, +ma[2], +ma[3])); } }
-    { const mh = caminho.match(/^\/api\/(cidades|universos)\/([a-z0-9-]+)\/historia$/); if (mh && req.method === 'GET') { limite.contar(`hist:${u}`, 20, 3600e3, 'Muitas consultas ao histórico nesta hora.');
-      return json(res, 200, mh[1] === 'cidades' ? await historia.daCidade(mh[2], u) : await historia.doUniverso(mh[2], u)); } }
-    if (r === 'POST /api/agentes') { limite.contar(`ia:${u}`, Number(process.env.IA_POR_HORA) || 60, 3600e3, 'Você chegou ao limite de pedidos ao Claude nesta hora.'); return json(res, 201, await agentes.criar(u, await corpo(req))); }
-    { const mg2 = caminho.match(/^\/api\/cidades\/([a-z0-9-]+)\/agentes$/); if (mg2 && req.method === 'GET') return json(res, 200, agentes.daCidade(mg2[1], u)); }
-    { const ma2 = caminho.match(/^\/api\/agentes\/(\d+)(?:\/(responder|parar|pr|descartar))?$/); if (ma2) { const aid = +ma2[1];
-      if (!ma2[2] && req.method === 'GET') return json(res, 200, agentes.ver(aid, u));
-      if (ma2[2] === 'responder' && req.method === 'POST') { limite.contar(`ia:${u}`, Number(process.env.IA_POR_HORA) || 60, 3600e3, 'Você chegou ao limite de pedidos ao Claude nesta hora.'); return json(res, 200, agentes.responder(aid, u, (await corpo(req)).texto)); }
-      if (ma2[2] === 'parar' && req.method === 'POST') return json(res, 200, agentes.parar(aid, u));
-      if (ma2[2] === 'descartar' && req.method === 'POST') return json(res, 200, agentes.descartar(aid, u, (await corpo(req)).caminho));
-      if (ma2[2] === 'pr' && req.method === 'POST') return json(res, 201, await agentes.abrirPR(aid, u, await corpo(req))); } }
+    if (cloud && await cloud.rota(req, res, r, caminho, u, eu)) return;
     // conexões com as contas de código (GitHub, Bitbucket, CodeCommit) e a lista dos repositórios de todas elas
-    if (r === 'GET /api/conexoes') return json(res, 200, { conexoes: conexoes.listar(u), githubOauth: githubOauthLigado() });
+    if (r === 'GET /api/conexoes') return json(res, 200, { conexoes: conexoes.listar(u), githubOauth: !!(cloud && cloud.githubOauth()) });
     if (r === 'GET /api/conexoes/repos') { limite.contar(`repos:${u}`, 60, 3600e3); return json(res, 200, await conexoes.repositorios(u)); }
-    { const mc = caminho.match(/^\/api\/conexoes\/(github|bitbucket|codecommit)$/); if (mc) {
+    { const mc = caminho.match(/^\/api\/conexoes\/([a-z]+)$/); if (mc) {
       if (req.method === 'PUT') { limite.contar(`con:${u}`, 20, 3600e3); return json(res, 200, await conexoes.conectar(u, mc[1], await corpo(req), conferirConexao)); }
       if (req.method === 'DELETE') return json(res, 200, conexoes.desconectar(u, mc[1])); } }
-    if (r === 'GET /conectar/github') { res.writeHead(302, { location: ghConexao.inicio(u, origemDe(req)), 'cache-control': 'no-store' }); return res.end(); }
-    if (r === 'GET /conectar/github/volta') { const qs = Object.fromEntries(new URL(req.url, 'http://x').searchParams);
-      try { await ghConexao.volta(u, origemDe(req), qs); res.writeHead(302, { location: '/cidades.html?conectado=github' }); } catch (e) { res.writeHead(302, { location: `/cidades.html?erro=${encodeURIComponent(e.message)}` }); } return res.end(); }
-    if (r === 'GET /api/universos') return json(res, 200, universos.meus(u));
-    if (r === 'POST /api/universos') return json(res, 201, universos.criar(u, await corpo(req)));
-    { const mv = caminho.match(/^\/api\/universos\/([a-z0-9-]+)(?:\/(repos|religar))?(?:\/([a-z0-9-]+))?$/); if (mv) {
-      if (!mv[2] && req.method === 'GET') return json(res, 200, universos.ver(mv[1], u));
-      if (!mv[2] && req.method === 'DELETE') { universos.apagar(mv[1], u); return json(res, 204); }
-      if (mv[2] === 'repos' && req.method === 'POST') { limite.contar(`ia:${u}`, Number(process.env.IA_POR_HORA) || 60, 3600e3, 'Você chegou ao limite de pedidos ao Claude nesta hora.'); planos.podeGerarCidade(u); planos.podeUsarIA(u); return json(res, 201, await universos.adicionarRepo(mv[1], u, await corpo(req))); }
-      if (mv[2] === 'repos' && mv[3] && req.method === 'DELETE') { universos.tirarRepo(mv[1], u, mv[3]); return json(res, 204); }
-      if (mv[2] === 'religar' && req.method === 'POST') return json(res, 200, { ligacoes: await universos.religar(mv[1], u) }); } }
     if (r === 'GET /api/cidades') return json(res, 200, { cidades: cidades.minhas(u), modelos: cidades.modelos() });
-    { const mp = caminho.match(/^\/api\/equipes\/(\d+)\/(assinar|portal)$/); if (mp && req.method === 'POST') return json(res, 200, mp[2] === 'assinar' ? await cobranca.assinar(+mp[1], u, (await corpo(req)).plano, origemDe(req)) : await cobranca.portal(+mp[1], u, origemDe(req))); }
-    if (r === 'GET /api/assinatura') return json(res, 200, { kiwify: kiwifyLigada(), minha: assinaturas.minha(eu.email), plano: planos.daPessoa(u), ...(kiwifyLigada() ? assinaturas.checkout() : {}) });
-    if (r === 'GET /api/admin/custos') { exigeAdmin(eu); const dias = Math.min(365, Number(new URL(req.url, 'http://x').searchParams.get('dias')) || 30); return json(res, 200, { ...custos.relatorio(dias), assinaturas: assinaturas.todas() }); }
-    if (r === 'GET /api/planos') return json(res, 200, { ligado: planos.ligado(), cobranca: cobrancaLigada(), kiwify: kiwifyLigada(), meu: planos.daPessoa(u), planos: Object.fromEntries(Object.entries(PLANOS).map(([k, v]) => [k, { ...v, pessoas: isFinite(v.pessoas) ? v.pessoas : null, cidadesGithubMes: isFinite(v.cidadesGithubMes) ? v.cidadesGithubMes : null, perguntasDia: isFinite(v.perguntasDia) ? v.perguntasDia : null }])) });
-    if (r === 'POST /api/cidades/github') { planos.podeGerarCidade(u); planos.podeUsarIA(u); const c = await cidades.doGithub(u, await corpo(req)); if (process.env.AUDITAR_AO_GERAR !== '0') try { planos.podeAuditar(u); planos.podeUsarIA(u); auditorias.iniciar(c.slug, u); } catch {} return json(res, 201, c); }   // o projeto entrou: os agentes já começam a revisar
+    if (r === 'GET /api/admin/custos') { exigeAdmin(eu); const dias = Math.min(365, Number(new URL(req.url, 'http://x').searchParams.get('dias')) || 30); return json(res, 200, { ...custos.relatorio(dias), assinaturas: cloud ? cloud.assinaturas.todas() : [] }); }
+    if (r === 'GET /api/planos') return json(res, 200, { ligado: planos.ligado(), ...(cloud ? cloud.planosExtras() : { cobranca: false, kiwify: false }), meu: planos.daPessoa(u), planos: Object.fromEntries(Object.entries(PLANOS).map(([k, v]) => [k, { ...v, pessoas: isFinite(v.pessoas) ? v.pessoas : null, cidadesGithubMes: isFinite(v.cidadesGithubMes) ? v.cidadesGithubMes : null, perguntasDia: isFinite(v.perguntasDia) ? v.perguntasDia : null }])) });
+    if (r === 'POST /api/cidades/github') { planos.podeGerarCidade(u); planos.podeUsarIA(u); const c = await cidades.doGithub(u, await corpo(req)); if (cloud) cloud.aoGerarCidade(c.slug, u); return json(res, 201, c); }
     if (r === 'POST /api/cidades/modelo') return json(res, 201, cidades.doModelo(u, await corpo(req)));
     if (r === 'POST /api/github') return json(res, 200, cidades.conectarGithub(u, (await corpo(req)).token));
     { const ms = caminho.match(/^\/api\/cidades\/([a-z0-9-]+)$/); if (ms) {
@@ -210,10 +165,6 @@ export function criarServidor({ banco = ':memory:', origens = null, seguro = fal
     if (req.method === 'GET' && /^\/api\/salas\/\d+\/atividades$/.test(caminho)) return json(res, 200, conversas.atividades(id, u));
     if (req.method === 'GET' && /^\/api\/atas\/\d+\/atividades$/.test(caminho)) return json(res, 200, conversas.atividadesDaAta(id, u));
     if (r === 'GET /api/obras') return json(res, 200, conversas.obras(u, url.searchParams.get('bairros') ? url.searchParams.get('bairros').split(',') : null));
-    { const mt = caminho.match(/^\/api\/atividades\/(\d+)\/ticket$/); if (mt && req.method === 'POST') { const a = await tickets.abrir(+mt[1], u); rt.paraSala(a.sala, { t: 'atividade', atividade: a }); return json(res, 200, a); } }
-    if (req.method === 'GET' && /^\/api\/equipes\/\d+\/tickets$/.test(caminho)) return json(res, 200, tickets.ver(id, u));
-    if (req.method === 'PUT' && /^\/api\/equipes\/\d+\/tickets$/.test(caminho)) return json(res, 200, tickets.configurar(id, u, await corpo(req)));
-    if (req.method === 'GET' && /^\/api\/salas\/\d+\/tickets$/.test(caminho)) return json(res, 200, { integrado: tickets.temIntegracao(id) });
     { const ma = caminho.match(/^\/api\/atividades\/(\d+)$/); if (ma && req.method === 'PATCH') { const a = conversas.marcar(+ma[1], u, await corpo(req)); rt.paraSala(a.sala, { t: 'atividade', atividade: a }); return json(res, 200, a); } }
     if (req.method === 'GET' && /^\/api\/atas\/\d+$/.test(caminho)) return json(res, 200, conversas.ata(id, u));
     if (req.method === 'GET' && /^\/api\/atas\/\d+\.md$/.test(caminho)) { const a = conversas.ata(id, u), nome = `${a.titulo.normalize('NFD').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'ata'}-${new Date(a.criada).toISOString().slice(0, 10)}.md`;
@@ -256,7 +207,7 @@ export function criarServidor({ banco = ':memory:', origens = null, seguro = fal
     res.writeHead(200, { 'content-type': TIPOS[extname(arq)] || 'application/octet-stream', 'cache-control': 'no-cache' }); res.end(await readFile(arq));
   }
 
-  return { servidor, db, auditorias, custos, fechar: () => new Promise(ok => { clearInterval(limpeza); corridas.fechar(); replay.fechar(); limite.fechar(); rt.fechar(); servidor.close(() => { db.close(); ok(); }); }) };
+  return { servidor, db, cloud, custos, fechar: () => new Promise(ok => { clearInterval(limpeza); corridas.fechar(); replay.fechar(); limite.fechar(); rt.fechar(); servidor.close(() => { db.close(); ok(); }); }) };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

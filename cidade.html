@@ -260,7 +260,6 @@
 <script src="engine/motor-pista.js"></script>
 <script src="engine/motor-rua.js"></script>
 <script src="engine/conector.js"></script>
-<script src="engine/whisper.js"></script>
 <script src="engine/encontros.js"></script>
 <script src="engine/the-grid.js"></script>
 <script src="engine/assistente.js"></script>
@@ -270,6 +269,10 @@
 <script src="engine/replay.js"></script>
 <script src="engine/espacial.js"></script>
 <script src="engine/atualizacoes.js"></script>
-<script src="engine/historia.js"></script>
-<script src="engine/auditoria.js"></script>
-<script src="engine/agente.js"></script>
+<script>
+// a edição Cloud traz a linha do tempo, a auditoria, o agente e o Whisper local; o núcleo aberto funciona sem eles
+fetch('/api/eu', { credentials: 'same-origin' }).then(r => (r.ok ? r.json() : null)).then(async (eu) => {
+  if (!eu || !eu.recursos || !eu.recursos.auditoria) return;
+  for (const f of ['whisper', 'historia', 'auditoria', 'agente']) await new Promise(ok => { const s = document.createElement('script'); s.src = `engine/cloud/${f}.js`; s.onload = s.onerror = ok; document.body.appendChild(s); });
+}).catch(() => {});
+</script>

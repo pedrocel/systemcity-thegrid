@@ -18,7 +18,6 @@ test('cadastro pela tela, equipe e convite pelo nick', async ({ page, request })
   await expect(page.getByRole('heading', { name: 'Pessoas (1)' })).toBeVisible();
   await page.locator('#f-add [name=nick]').fill(amiga.nick); await page.locator('#f-add').getByRole('button', { name: 'Adicionar' }).click();
   await expect(page.getByRole('heading', { name: 'Pessoas (2)' })).toBeVisible();
-  await expect(page.locator('#tickets')).toContainText('Tickets');
 });
 
 test('a cidade desenha e abre o painel de encontros', async ({ page }) => {
