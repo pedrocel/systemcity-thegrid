@@ -23,6 +23,7 @@ import { cidades as criarCidades } from './cidades.mjs';
 import { comoRoda } from './ia.mjs';
 import { assistente as criarAssistente } from './assistente.mjs';
 import { incidentes as criarIncidentes } from './incidentes.mjs';
+import { rag as criarRag } from './rag.mjs';
 import { replay as criarReplay } from './replay.mjs';
 import { planos as criarPlanos, PLANOS } from './planos.mjs';
 import { limitador, ipDe } from './limites.mjs';
@@ -35,7 +36,7 @@ const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
   '.json': 'application/json', '.jpg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml', '.md': 'text/markdown; charset=utf-8' };
 const PROIBIDO = /(^|\/)(servidor|bridge|node_modules|scripts|\.git)(\/|$)|(^|\/)\./;   // só a cidade é pública
 
-export function criarServidor({ banco = ':memory:', origens = null, seguro = false, tls = null, gerarAta = gerarComClaude, corrida = {}, comLimites = true, conferirConexao = true, cloud: opCloud = {} } = {}) {
+export function criarServidor({ banco = ':memory:', origens = null, seguro = false, tls = null, gerarAta = gerarComClaude, corrida = {}, comLimites = true, conferirConexao = true, cloud: opCloud = {}, rag: opRag = {} } = {}) {
   const db = abrir(banco), contas = criarContas(db), conversas = criarConversas(db);
   // cada requisição carrega quem pediu e o tipo de trabalho: as chamadas ao Claude que ela fizer (agora ou em segundo plano) são contadas nessa conta
   // admins: e-mails em ADMINS (separados por vírgula); veem o painel de custos
@@ -51,6 +52,7 @@ export function criarServidor({ banco = ':memory:', origens = null, seguro = fal
   const ctxCloud = { db, contas, conversas, equipes, cidades, conexoes, rt, limite, incidentes, get planos() { return planos; }, json: (...a) => json(...a), corpo: (r) => corpo(r), cookie: (...a) => cookie(...a), origemDe: (r) => origemDe(r),
     quem: (req) => contas.deToken(lerCookie(req, contas.COOKIE)), limiteIA: (u) => limite.contar(`ia:${u}`, Number(process.env.IA_POR_HORA) || 60, 3600e3, 'Você chegou ao limite de pedidos ao Claude nesta hora.') };
   const cloud = Cloud ? Cloud.criarCloud(ctxCloud, opCloud) : null, planos = criarPlanos(db, { assinaturas: cloud && cloud.planoPessoa, custos });
+  const rag = criarRag(db, { cidades, conexoes, ...opRag });
   const RECURSOS = cloud ? cloud.RECURSOS : { provedores: Object.keys(FONTES) };
   ganchos.mensagem = (u, m) => corridas.mensagem(u, m); ganchos.saiu = (u) => corridas.saiu(u);
   const gerando = new Set();   // salas com ata sendo gerada agora: uma por vez
@@ -122,6 +124,11 @@ export function criarServidor({ banco = ':memory:', origens = null, seguro = fal
     { const mw = caminho.match(/^\/api\/cidades\/([a-z0-9-]+)\/(webhook|regerar)$/); if (mw) {
       if (mw[2] === 'webhook' && req.method === 'GET') return json(res, 200, { url: `${origemDe(req)}/api/cidades/${mw[1]}/github`, segredo: cidades.webhookDe(mw[1], u) });
       if (mw[2] === 'regerar' && req.method === 'POST') { limite.contar(`ia:${u}`, Number(process.env.IA_POR_HORA) || 60, 3600e3, 'Você chegou ao limite de pedidos ao Claude nesta hora.'); return json(res, 200, await regerarEAvisar(mw[1], u)); } } }
+    // "Pergunte ao código": cada rota confere se a pessoa pode ver a cidade
+    { const mq = caminho.match(/^\/api\/cidades\/([a-z0-9-]+)\/codigo(\/indexar|\/perguntar)?$/); if (mq) {
+      if (!mq[2] && req.method === 'GET') return json(res, 200, rag.situacao(mq[1], u));
+      if (mq[2] === '/indexar' && req.method === 'POST') { limite.contar(`rag:${u}`, 10, 3600e3, 'Muitas indexações nesta hora.'); return json(res, 202, { estado: rag.indexar(mq[1], u).estado }); }
+      if (mq[2] === '/perguntar' && req.method === 'POST') { limite.contar(`ia:${u}`, Number(process.env.IA_POR_HORA) || 60, 3600e3, 'Você chegou ao limite de pedidos ao Claude nesta hora.'); planos.podeUsarIA(u); planos.podePerguntar(u); return json(res, 200, await rag.responder(mq[1], u, await corpo(req))); } } }
     if (cloud && await cloud.rota(req, res, r, caminho, u, eu)) return;
     // conexões com as contas de código (GitHub, Bitbucket, CodeCommit) e a lista dos repositórios de todas elas
     if (r === 'GET /api/conexoes') return json(res, 200, { conexoes: conexoes.listar(u), githubOauth: !!(cloud && cloud.githubOauth()) });
@@ -197,7 +204,7 @@ export function criarServidor({ banco = ':memory:', origens = null, seguro = fal
   // cada membro recebe a versão dele (com a própria resposta e as conversas não lidas)
   // regera e avisa quem vê a cidade do que mudou (quem estiver com ela aberta recebe o aviso na hora)
   async function regerarEAvisar(slug, u, commit) {
-    try { const r = await cidades.regerar(slug, u); for (const m of r.membros) rt.para(m, { t: 'cidade:atualizada', slug, commit: commit ? String(commit).slice(0, 7) : null, mudancas: r.mudancas }); return r.mudancas; }
+    try { const r = await cidades.regerar(slug, u); for (const m of r.membros) rt.para(m, { t: 'cidade:atualizada', slug, commit: commit ? String(commit).slice(0, 7) : null, mudancas: r.mudancas }); rag.reindexarSeHouver(slug, r.membros[0]); return r.mudancas; }
     catch (e) { console.error(`regerar ${slug}:`, e.message); if (u != null) throw e instanceof ErroUso ? e : new ErroUso(e.message, 502); }
   }
   const avisarEquipe = (e) => { for (const m of equipes.membrosDe(e.id)) rt.para(m, { t: 'equipe', equipe: e.id }); };

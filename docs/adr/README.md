@@ -11,3 +11,4 @@ Short records of the decisions that shape SystemCity: what was decided, why, and
 | [0005](0005-provedores-por-adaptador.md) | Code hosts as registrable adapters |
 | [0006](0006-open-core.md) | Open core as an optional layer, not feature flags |
 | [0007](0007-chamadas-webrtc-em-malha.md) | WebRTC mesh calls with signalling over the app socket |
+| [0008](0008-busca-do-rag-pela-medida.md) | Code search chosen by measurement: vectors over hybrid |

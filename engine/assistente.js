@@ -13,7 +13,7 @@ botao.className = 'bt'; botao.id = 'b-perguntar'; botao.textContent = 'Perguntar
 barra.insertBefore(botao, $('#b-encontros') || barra.querySelector('#b-pausa'));
 document.getElementById('app').insertAdjacentHTML('beforeend', `
   <aside class="enc ask vidro" id="assistente" aria-label="Pergunte para a cidade" hidden>
-    <div class="enc-cab"><b>Pergunte para a cidade</b><button class="bt" id="ask-fecha" aria-label="Fechar">✕</button></div>
+    <div class="enc-cab"><b>Pergunte para a cidade</b><label class="ask-modo" id="ask-modo" hidden><input type="checkbox" id="ask-codigo"> no código</label><button class="bt" id="ask-fecha" aria-label="Fechar">✕</button></div>
     <div class="enc-corpo" id="ask-corpo"><p class="enc-vazio">Pergunte por que um bairro está vermelho, o que um prédio faz, por onde passa um pedido, quem cuida de quê… O Claude responde olhando a cidade e os documentos dela, e a câmera voa até o lugar.</p>
       <div class="ask-sugestoes"><button class="bt" data-q="Me dá uma visão geral desta cidade em 4 frases.">Visão geral</button><button class="bt" data-q="Qual prédio está com a maior fila agora e por quê?">Maior fila</button><button class="bt" data-q="Por onde passa um item do começo ao fim no bairro em foco?">Caminho do item</button><button class="bt" data-q="Quais são os pontos de falha desta arquitetura?">Pontos de falha</button></div></div>
     <form class="enc-form linha" id="ask-form" style="padding:10px"><input name="q" maxlength="1000" autocomplete="off" placeholder="Pergunte algo…" aria-label="Pergunta"><button class="bt forte">Perguntar</button></form>
@@ -35,10 +35,19 @@ function mapaAgora() {
     rotas: Object.entries(C.ROTAS).map(([id, r]) => ({ id, de: r.de, para: r.para })),
     obras: (C.obras && C.obras.lista ? C.obras.lista() : []) };
 }
+// "no código": responde lendo o repositório, com citações de arquivo e linha; só em cidade gerada de um repositório
+const slug = window.SYSTEMCITY_SLUG || null, api = (m, c, d) => C.encontros.api(m, `/api/cidades/${slug}/codigo${c}`, d), modo = $('#ask-modo'), noCodigo = $('#ask-codigo');
+const avisar = (t) => { if (corpo.querySelector('.enc-vazio')) corpo.innerHTML = ''; corpo.insertAdjacentHTML('beforeend', `<div class="enc-msg"><small>código</small>${esc(t)}</div>`); corpo.scrollTop = corpo.scrollHeight; };
+const fontesHtml = (l) => l.length ? `<ol class="ask-fontes">${l.map(f => { const t = `${esc(f.caminho)}:${f.ini}-${f.fim}`; return `<li value="${f.n}">${f.url ? `<a href="${esc(f.url)}" target="_blank" rel="noopener">${t}</a>` : t}</li>`; }).join('')}</ol>` : '';
+botao.addEventListener('click', () => { if (slug && C.encontros.eu()) api('GET', '').then(() => { modo.hidden = false; }).catch(() => {}); });
+noCodigo.addEventListener('change', async () => { if (!noCodigo.checked) return; try { const s = await api('GET', '');
+  if (s.estado === 'nunca' || s.estado === 'erro') { await api('POST', '/indexar', {}); avisar('Lendo o repositório. Em repositórios grandes isso leva alguns minutos; pode perguntar quando terminar.'); } else if (s.estado === 'indexando') avisar('O repositório ainda está sendo lido.'); else avisar(`${s.arquivos} arquivos lidos, ${s.trechos} trechos.`);
+} catch (e) { avisar(e.message); noCodigo.checked = false; } });
 form.addEventListener('submit', async (ev) => { ev.preventDefault(); const q = form.q.value.trim(); if (!q) return; form.q.value = ''; form.querySelector('button').disabled = true;
   if (corpo.querySelector('.enc-vazio')) corpo.innerHTML = '';
   corpo.insertAdjacentHTML('beforeend', `<div class="enc-msg minha">${esc(q)}</div><div class="enc-msg ask-pensando"><small>Claude</small>olhando a cidade…</div>`); corpo.scrollTop = corpo.scrollHeight;
-  try { const r = await C.encontros.api('POST', '/api/cidade/perguntar', { slug: window.SYSTEMCITY_SLUG || null, mapa: mapaAgora(), pergunta: q, historico });
+  try { if (noCodigo.checked) { const r = await api('POST', '/perguntar', { pergunta: q }), el = corpo.querySelector('.ask-pensando'); el.classList.remove('ask-pensando'); el.innerHTML = `<small>código</small>${md(r.resposta)}${fontesHtml(r.fontes)}`; return; }
+    const r = await C.encontros.api('POST', '/api/cidade/perguntar', { slug: window.SYSTEMCITY_SLUG || null, mapa: mapaAgora(), pergunta: q, historico });
     historico.push({ p: q, r: r.resposta }); const el = corpo.querySelector('.ask-pensando'); el.classList.remove('ask-pensando'); el.innerHTML = `<small>Claude</small>${md(r.resposta)}`;
     if (r.foco) { const nome = r.foco.tipo === 'b' ? (C.BAIRRO[r.foco.id] || {}).nome : (C.PREDIO[r.foco.id] || {}).nome; if (nome) { el.insertAdjacentHTML('beforeend', `<button class="bt ask-foco" data-t="${r.foco.tipo}" data-id="${esc(r.foco.id)}">Ver ${esc(nome)} →</button>`); C.api.escolher(r.foco.tipo, r.foco.id); } }
   } catch (e) { const el = corpo.querySelector('.ask-pensando'); el.classList.remove('ask-pensando'); el.innerHTML = `<small>erro</small>${esc(e.message)}`; }

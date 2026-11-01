@@ -2,6 +2,11 @@
 
 All notable changes to the community edition. The format follows [Keep a Changelog](https://keepachangelog.com/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Ask the code:** RAG over the repository with cited answers, local embeddings (opt-in with `RAG_VETORES=1`), BM25 fallback and a retrieval evaluation.
+
 ## [1.1.0] · 2026-11-01
 
 ### Added

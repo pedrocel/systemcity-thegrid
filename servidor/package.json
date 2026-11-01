@@ -15,5 +15,8 @@
   },
   "engines": {
     "node": ">=22.13"
+  },
+  "optionalDependencies": {
+    "@huggingface/transformers": "3.8.1"
   }
 }
