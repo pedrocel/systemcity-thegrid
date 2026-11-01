@@ -307,3 +307,13 @@ test('custos de IA: cada chamada é anotada com quem pediu e o tipo, e o admin v
     const outra = await pessoa('ze-custo'); assert.equal((await api('GET', '/api/admin/custos', null, outra.cookie)).status, 403, 'só admin');
   } finally { delete process.env.ADMINS; }
 });
+
+test('link público: quem criou liga e desliga; o link mostra o mapa sem pastas, sem conta', async () => {
+  const lu = await pessoa('lu-pub'), ze = await pessoa('ze-pub');
+  const c = (await api('POST', '/api/cidades/modelo', { modelo: 'saas' }, lu.cookie)).corpo;
+  assert.equal((await api('POST', `/api/cidades/${c.slug}/publico`, {}, ze.cookie)).status, 404, 'quem não vê a cidade não compartilha');
+  const { publico } = (await api('POST', `/api/cidades/${c.slug}/publico`, {}, lu.cookie)).corpo; assert.ok(publico.length >= 16);
+  const js = await (await fetch(`${base}/api/publico/${publico}/cidade.js`)).text(); assert.match(js, /^SystemCity\.definir\(/); assert.doesNotMatch(js, /"pastas"/);
+  await api('POST', `/api/cidades/${c.slug}/publico`, { ligar: false }, lu.cookie);
+  assert.equal((await fetch(`${base}/api/publico/${publico}/cidade.js`)).status, 404, 'desligado, o link morre');
+});

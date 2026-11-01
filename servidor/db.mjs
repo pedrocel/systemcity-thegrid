@@ -89,6 +89,7 @@ export function abrir(caminho) {
   if (!colEquipes.includes('stripe')) db.exec('ALTER TABLE equipes ADD COLUMN stripe TEXT');   // cliente e assinatura no Stripe
   if (!colEquipes.includes('tickets')) db.exec('ALTER TABLE equipes ADD COLUMN tickets TEXT');   // integração de tickets (JSON com a credencial)
   const colCidades = db.prepare('PRAGMA table_info(cidades)').all().map(c => c.name);
+  if (!colCidades.includes('publico')) db.exec('ALTER TABLE cidades ADD COLUMN publico TEXT');   // token do link público (só leitura); null = fechada
   if (!colCidades.includes('webhook')) db.exec('ALTER TABLE cidades ADD COLUMN webhook TEXT');   // segredo do webhook do GitHub
   if (!colCidades.includes('universo')) db.exec('ALTER TABLE cidades ADD COLUMN universo INTEGER REFERENCES universos(id) ON DELETE SET NULL');
   if (!colCidades.includes('anterior')) db.exec('ALTER TABLE cidades ADD COLUMN anterior TEXT');   // definição antes da última regeração

@@ -33,6 +33,7 @@ Architecture diagrams go stale the day they are drawn, and nobody opens them dur
 | 🔥 **Incidents** | A building catches fire and opens a war room. When it is resolved, Claude writes the post-mortem. Alerts can come in by webhook (Sentry, Datadog…). |
 | 🏁 **The Grid** | A multiplayer motorbike race for the daily stand-up, with voice chat in the corner, laps, scoring, seasons and achievements. Touch controls on mobile. |
 | ⏪ **Replay & tour** | Rewind the last 48 h of queues and incidents; a guided tour and presentation mode with a script written by Claude. |
+| 🔗 **Share & snapshot** | A read-only public link to the map, no account needed, and a one-click high-resolution photo of the city for docs and slides. |
 | 💸 **AI cost tracking** | Every Claude call is attributed to a person and a kind of work, with an admin dashboard. |
 
 <table>

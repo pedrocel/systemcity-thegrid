@@ -25,6 +25,7 @@ Diagrama de arquitetura fica velho no dia em que é desenhado, e ninguém abre d
 - **Incidentes:** o prédio pega fogo e abre uma sala de guerra. Resolvido, o Claude escreve o post-mortem. Alertas também chegam por webhook (Sentry, Datadog…).
 - **The Grid:** corrida de moto multiplayer para a daily, com chamada de voz no canto, voltas, pontuação, temporadas e conquistas. Controles de toque no celular.
 - **Replay e tour:** volte as últimas 48 h de filas e incidentes; tour guiado e modo apresentação com roteiro do Claude.
+- **Link público e foto:** um link só de leitura para qualquer pessoa ver o mapa sem conta, e uma foto da cidade em alta resolução com um clique.
 - **Custo de IA:** cada chamada ao Claude é atribuída a uma pessoa e a um tipo de trabalho, com painel para o admin.
 
 <table>

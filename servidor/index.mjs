@@ -48,9 +48,9 @@ export function criarServidor({ banco = ':memory:', origens = null, seguro = fal
   const servidor = tls ? https.createServer(tls, tratar) : http.createServer(tratar);
   const ganchos = {}, rt = tempoReal(servidor, { contas, conversas, origens, ganchos }), corridas = criarCorridas({ db, conversas, contas, rt, ...corrida });
   const equipes = criarEquipes(db, { contas, conversas }), custos = criarCustos(db), conexoes = criarConexoes(db), cidades = criarCidades(db, { equipes, conexoes }), assistente = criarAssistente({ cidades, conversas, equipes }), incidentes = criarIncidentes(db, { cidades, conversas, equipes, contas, rt, gerar: gerarAta }), replay = criarReplay(db, { cidades }), limite = comLimites ? limitador() : { contar() {}, zerar() {}, fechar() {} };
-  const ctxCloud = { db, contas, conversas, equipes, cidades, conexoes, rt, limite, get planos() { return planos; }, json: (...a) => json(...a), corpo: (r) => corpo(r), cookie: (...a) => cookie(...a), origemDe: (r) => origemDe(r),
+  const ctxCloud = { db, contas, conversas, equipes, cidades, conexoes, rt, limite, incidentes, get planos() { return planos; }, json: (...a) => json(...a), corpo: (r) => corpo(r), cookie: (...a) => cookie(...a), origemDe: (r) => origemDe(r),
     quem: (req) => contas.deToken(lerCookie(req, contas.COOKIE)), limiteIA: (u) => limite.contar(`ia:${u}`, Number(process.env.IA_POR_HORA) || 60, 3600e3, 'Você chegou ao limite de pedidos ao Claude nesta hora.') };
-  const cloud = Cloud ? Cloud.criarCloud(ctxCloud, opCloud) : null, planos = criarPlanos(db, { assinaturas: cloud && cloud.assinaturas, custos });
+  const cloud = Cloud ? Cloud.criarCloud(ctxCloud, opCloud) : null, planos = criarPlanos(db, { assinaturas: cloud && cloud.planoPessoa, custos });
   const RECURSOS = cloud ? cloud.RECURSOS : { provedores: Object.keys(FONTES) };
   ganchos.mensagem = (u, m) => corridas.mensagem(u, m); ganchos.saiu = (u) => corridas.saiu(u);
   const gerando = new Set();   // salas com ata sendo gerada agora: uma por vez
@@ -67,6 +67,9 @@ export function criarServidor({ banco = ':memory:', origens = null, seguro = fal
     if (caminho === '/saude') return json(res, 200, { ok: true });   // para o deploy e o monitoramento saberem que está de pé
     if (!caminho.startsWith('/api/') && !caminho.startsWith('/auth/') && !caminho.startsWith('/conectar/')) return estatico(caminho, res);
     if (cloud && await cloud.antes(req, res, `${req.method} ${caminho}`, caminho)) return;
+    // a cidade aberta por link público: só o mapa, sem conta
+    { const mp = caminho.match(/^\/api\/publico\/([\w-]{16,40})\/cidade\.js$/); if (mp && req.method === 'GET') {
+      const js = cidades.publicaJs(mp[1]); res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-store' }); return res.end(js); } }
     // a cidade guardada no banco, como JS para a página: só para quem pode vê-la
     { const mc = caminho.match(/^\/api\/cidades\/([a-z0-9-]+)\/(cidade|catalogo|textos-([a-z0-9-]+))\.js$/);
       if (mc && req.method === 'GET') { const eu = contas.deToken(lerCookie(req, contas.COOKIE)); if (!eu) { res.writeHead(401).end(); return; }
@@ -88,7 +91,7 @@ export function criarServidor({ banco = ':memory:', origens = null, seguro = fal
 
     const ip = ipDe(req);
     if (cloud && await cloud.publico(req, res, r, caminho, ip, limite)) return;
-    if (r === 'POST /api/cadastro') { limite.contar(`cad:${ip}`, 10, 3600e3, 'Muitas contas criadas daqui.'); const { usuario, token: t } = contas.cadastrar(await corpo(req)); return json(res, 201, usuario, { 'set-cookie': cookie(t, contas.DIAS_SESSAO * 86400) }); }
+    if (r === 'POST /api/cadastro') { limite.contar(`cad:${ip}`, 10, 3600e3, 'Muitas contas criadas daqui.'); const { usuario, token: t } = contas.cadastrar(await corpo(req)); if (cloud) cloud.aoCadastrar(usuario.id); return json(res, 201, usuario, { 'set-cookie': cookie(t, contas.DIAS_SESSAO * 86400) }); }
     if (r === 'POST /api/entrar') { const dados = await corpo(req), quem = String(dados.email || '').trim().toLowerCase();
       limite.contar(`ent-ip:${ip}`, 30, 900e3, 'Muitas tentativas de login daqui.'); limite.contar(`ent:${quem}`, 8, 900e3, 'Muitas tentativas para esta conta.');
       const { usuario, token: t } = contas.entrar(dados); limite.zerar(`ent:${quem}`); return json(res, 200, usuario, { 'set-cookie': cookie(t, contas.DIAS_SESSAO * 86400) }); }
@@ -101,9 +104,10 @@ export function criarServidor({ banco = ':memory:', origens = null, seguro = fal
     if (r === 'POST /api/senha/redefinir') { limite.contar(`red:${ip}`, 10, 3600e3); const d = await corpo(req), { usuario, token: t } = contas.redefinir(d.token, d.senha); return json(res, 200, usuario, { 'set-cookie': cookie(t, contas.DIAS_SESSAO * 86400) }); }
     if (r === 'POST /api/sair') { contas.sair(token); return json(res, 204, undefined, { 'set-cookie': cookie('', 0) }); }
     if (!eu) throw new ErroUso('Entre na sua conta.', 401);
+    if (cloud) cloud.exigirAcesso(eu, `${req.method} ${caminho}`);   // edição Cloud: teste do Pro acabou sem pagamento, só o essencial fica aberto
     const u = eu.id, id = Number((caminho.match(/^\/api\/(?:salas|reunioes|atas|corridas|equipes)\/(\d+)/) || [])[1]);
 
-    if (r === 'GET /api/eu') return json(res, 200, { ...eu, recursos: RECURSOS, plano: planos.daPessoa(u), admin: (process.env.ADMINS || '').toLowerCase().split(',').map(x => x.trim()).includes(eu.email), githubConectado: cidades.githubConectado(u), ia: comoRoda(), ticketsUrl: process.env.TICKETS_NOVO_URL || null, tickets: process.env.SISTEMA_TICKETS || null });
+    if (r === 'GET /api/eu') return json(res, 200, { ...eu, recursos: RECURSOS, acesso: cloud ? cloud.acesso(u) : null, plano: planos.daPessoa(u), admin: (process.env.ADMINS || '').toLowerCase().split(',').map(x => x.trim()).includes(eu.email), githubConectado: cidades.githubConectado(u), ia: comoRoda(), ticketsUrl: process.env.TICKETS_NOVO_URL || null, tickets: process.env.SISTEMA_TICKETS || null });
     if (r === 'POST /api/cidade/roteiro') return json(res, 200, await assistente.roteiro(u, await corpo(req)));
     if (/^POST \/api\/(cidade\/(perguntar|roteiro)|cidades\/github|salas\/\d+\/atas|incidentes\/\d+\/resolver)$/.test(r)) limite.contar(`ia:${u}`, Number(process.env.IA_POR_HORA) || 60, 3600e3, 'Você chegou ao limite de pedidos ao Claude nesta hora.');   // a chave da Anthropic é sua: sem freio, uma pessoa gasta por todas
     if (r === 'POST /api/cidade/perguntar') { planos.podeUsarIA(u); planos.podePerguntar(u); }
@@ -129,6 +133,7 @@ export function criarServidor({ banco = ':memory:', origens = null, seguro = fal
     if (r === 'GET /api/admin/custos') { exigeAdmin(eu); const dias = Math.min(365, Number(new URL(req.url, 'http://x').searchParams.get('dias')) || 30); return json(res, 200, { ...custos.relatorio(dias), assinaturas: cloud ? cloud.assinaturas.todas() : [] }); }
     if (r === 'GET /api/planos') return json(res, 200, { ligado: planos.ligado(), ...(cloud ? cloud.planosExtras() : { cobranca: false, kiwify: false }), meu: planos.daPessoa(u), planos: Object.fromEntries(Object.entries(PLANOS).map(([k, v]) => [k, { ...v, pessoas: isFinite(v.pessoas) ? v.pessoas : null, cidadesGithubMes: isFinite(v.cidadesGithubMes) ? v.cidadesGithubMes : null, perguntasDia: isFinite(v.perguntasDia) ? v.perguntasDia : null }])) });
     if (r === 'POST /api/cidades/github') { planos.podeGerarCidade(u); planos.podeUsarIA(u); const c = await cidades.doGithub(u, await corpo(req)); if (cloud) cloud.aoGerarCidade(c.slug, u); return json(res, 201, c); }
+    { const mc2 = caminho.match(/^\/api\/cidades\/([a-z0-9-]+)\/publico$/); if (mc2 && req.method === 'POST') return json(res, 200, cidades.compartilhar(mc2[1], u, (await corpo(req)).ligar !== false)); }
     if (r === 'POST /api/cidades/modelo') return json(res, 201, cidades.doModelo(u, await corpo(req)));
     if (r === 'POST /api/github') return json(res, 200, cidades.conectarGithub(u, (await corpo(req)).token));
     { const ms = caminho.match(/^\/api\/cidades\/([a-z0-9-]+)$/); if (ms) {
@@ -207,7 +212,7 @@ export function criarServidor({ banco = ':memory:', origens = null, seguro = fal
     res.writeHead(200, { 'content-type': TIPOS[extname(arq)] || 'application/octet-stream', 'cache-control': 'no-cache' }); res.end(await readFile(arq));
   }
 
-  return { servidor, db, cloud, custos, fechar: () => new Promise(ok => { clearInterval(limpeza); corridas.fechar(); replay.fechar(); limite.fechar(); rt.fechar(); servidor.close(() => { db.close(); ok(); }); }) };
+  return { servidor, db, cloud, custos, fechar: () => new Promise(ok => { clearInterval(limpeza); if (cloud && cloud.fechar) cloud.fechar(); corridas.fechar(); replay.fechar(); limite.fechar(); rt.fechar(); servidor.close(() => { db.close(); ok(); }); }) };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

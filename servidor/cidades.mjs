@@ -171,7 +171,7 @@ export function cidades(db, { equipes, conexoes }) {
     // a lista da página de projetos: com um mapa mínimo (a grade e a cor de cada bairro) para desenhar a miniatura, e a última auditoria
     minhas(u) {
       const ultimaAud = (() => { try { return db.prepare("SELECT estado, achados FROM auditorias WHERE cidade = ? ORDER BY id DESC LIMIT 1"); } catch { return null; } })();
-      return db.prepare(`SELECT c.id, c.slug, c.nome, c.dono, c.equipe, c.fonte, c.criada, c.atualizada, c.universo, c.definicao, e.nome AS equipe_nome FROM cidades c LEFT JOIN equipes e ON e.id = c.equipe
+      return db.prepare(`SELECT c.id, c.slug, c.nome, c.dono, c.equipe, c.fonte, c.criada, c.atualizada, c.universo, c.definicao, c.publico, e.nome AS equipe_nome FROM cidades c LEFT JOIN equipes e ON e.id = c.equipe
         WHERE c.dono = ? OR c.equipe IN (SELECT equipe FROM equipe_membros WHERE usuario = ?) ORDER BY c.atualizada DESC`).all(u, u).map(({ definicao, ...c }) => {
         let d = {}; try { d = JSON.parse(definicao); } catch {}
         const a = ultimaAud && ultimaAud.get(c.slug), achados = a ? JSON.parse(a.achados) : [];
@@ -210,6 +210,12 @@ export function cidades(db, { equipes, conexoes }) {
         return { slug, mudancas: diferencas(antes, g.definicao), membros: c.equipe ? equipes.membrosDe(c.equipe) : [c.dono] }; }
       finally { regerando.delete(slug); }
     },
+    // link público: quem tem o link vê a cidade (só o mapa), sem conta; quem criou liga, troca ou desliga
+    compartilhar(slug, u, ligar) { const c = q.porSlug.get(slug); if (!c || !podeVer(c, u)) throw new ErroUso('Cidade não encontrada.', 404);
+      if (c.dono !== u) throw new ErroUso('Só quem criou a cidade compartilha o link público.', 403);
+      const token = ligar ? randomBytes(18).toString('base64url') : null; db.prepare('UPDATE cidades SET publico = ? WHERE id = ?').run(token, c.id); return { publico: token }; },
+    publicaJs(token) { const c = token && db.prepare('SELECT * FROM cidades WHERE publico = ?').get(String(token)); if (!c) throw new ErroUso('Este link não existe ou foi desligado.', 404);
+      return paraJs(JSON.parse(c.definicao), { catalogo: false }); },   // sem pastas nem documentos internos
     webhookDe(slug, u) { const c = q.porSlug.get(slug); if (!c || c.dono !== u) throw new ErroUso('Só quem criou a cidade vê o webhook.', 403); if (!c.webhook) { q.webhook.run(randomBytes(24).toString('hex'), c.id); return q.porSlug.get(slug).webhook; } return c.webhook; },
     // o GitHub assina o corpo com o segredo da cidade (X-Hub-Signature-256); só push na branch padrão regera
     conferirWebhook(slug, assinatura, bruto) { const c = q.porSlug.get(slug); if (!c || !c.webhook) throw new ErroUso('Cidade não encontrada.', 404);

@@ -41,6 +41,8 @@ export function incidentes(db, { cidades, conversas, equipes, contas, rt, gerar 
     abertos(slug, u) { cidades.ver(slug, u); return q.abertos.all(slug); },
     recentes(slug, u) { cidades.ver(slug, u); return q.recentes.all(slug); },
     declarar(slug, u, corpo) { cidades.ver(slug, u); return abrir(slug, u, { ...corpo, origem: 'manual' }); },
+    // alerta do próprio servidor (o monitor da hospedagem): sem autor, origem 'monitor'
+    automatico(slug, corpo) { return abrir(slug, null, { ...corpo, origem: 'monitor' }); },
     // alerta externo: token compartilhado no cabeçalho x-systemcity-token
     webhook(token, corpo) {
       const certo = process.env.INCIDENTES_TOKEN; if (!certo) throw new ErroUso('Webhook de incidentes desligado: defina INCIDENTES_TOKEN no servidor.', 503);

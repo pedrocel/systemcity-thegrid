@@ -2,10 +2,11 @@
 // e completa o mapa com valores padrão antes de os motores rodarem. A cidade se declara com SystemCity.definir({...}).
 (() => {
   // ?cidade=<pasta> abre uma cidade em cities/; ?c=<slug> abre uma cidade guardada no servidor (gerada do GitHub ou de um modelo)
-  const doBanco = (location.search.match(/[?&]c=([a-z0-9-]+)/) || [])[1], universo = (location.search.match(/[?&]u=([a-z0-9-]+)/) || [])[1];
+  // ?p=<token> abre a cidade por link público (só leitura, sem conta)
+  const doBanco = (location.search.match(/[?&]c=([a-z0-9-]+)/) || [])[1], universo = (location.search.match(/[?&]u=([a-z0-9-]+)/) || [])[1], publico = (location.search.match(/[?&]p=([\w-]{16,40})/) || [])[1];
   const nome = (location.search.match(/[?&]cidade=([\w-]+)/) || [])[1] || window.SYSTEMCITY_CIDADE || 'exemplo';
-  window.SYSTEMCITY_BASE = universo ? `/api/universos/${universo}/` : doBanco ? `/api/cidades/${doBanco}/` : `cities/${nome}/`;
-  window.SYSTEMCITY_SLUG = doBanco || null; window.SYSTEMCITY_UNIVERSO = universo || null;
+  window.SYSTEMCITY_BASE = publico ? `/api/publico/${publico}/` : universo ? `/api/universos/${universo}/` : doBanco ? `/api/cidades/${doBanco}/` : `cities/${nome}/`;
+  window.SYSTEMCITY_SLUG = doBanco || null; window.SYSTEMCITY_UNIVERSO = universo || null; window.SYSTEMCITY_PUBLICO = publico || null;
 
   // ?so=<bairro>: só esse bairro fica de pé, com os vizinhos de fora listados em recortes[<bairro>]; as rotas que perderam uma ponta caem
   function recortar(M) {

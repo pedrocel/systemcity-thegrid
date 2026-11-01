@@ -2,6 +2,12 @@
 
 All notable changes to the community edition. The format follows [Keep a Changelog](https://keepachangelog.com/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] · 2026-11-01
+
+### Added
+- **Public city link:** the city owner turns on a read-only link that anyone can open without an account. Only the map is shared: folders, documents, conversations and team data stay private. The link can be rotated or turned off.
+- **City photo:** one click renders the scene at high resolution (up to 4K wide) with the city name and downloads a PNG.
+
 ## [1.0.0] · 2026-11-01
 
 First public release.
@@ -18,4 +24,5 @@ First public release.
 - AI cost attribution per person and kind of work, admin dashboard, optional per-plan limits.
 - Docker image and compose file, server tests, Playwright browser tests, CI, CodeQL and Dependabot.
 
+[1.1.0]: https://github.com/pedrocel/systemcity-thegrid/releases/tag/v1.1.0
 [1.0.0]: https://github.com/pedrocel/systemcity-thegrid/releases/tag/v1.0.0

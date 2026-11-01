@@ -185,9 +185,10 @@
     return `<article class="proj ${P.ocupadas.has(c.slug) ? 'ocupada' : ''}" data-busca="${esc((c.nome + ' ' + repo).toLowerCase())}">
       <a href="/cidade.html?c=${c.slug}">${miniatura([c.mapa])}<div class="corpo"><h3><span>${esc(c.nome)}</span></h3>
         <div class="origem">${glifo(p)}<span>${esc(repo)}</span></div>
-        <div class="meta"><span>${c.bairros} bairros</span><span>·</span><span>${ha(c.atualizada)}</span>${c.equipe_nome ? `<span>·</span><span>${esc(c.equipe_nome)}</span>` : ''}${auditoriaChip(c.auditoria)}</div></div></a>
+        <div class="meta"><span>${c.bairros} bairros</span>${c.publico ? '<span class="chip" title="Qualquer pessoa com o link vê o mapa">público</span>' : ''}<span>·</span><span>${ha(c.atualizada)}</span>${c.equipe_nome ? `<span>·</span><span>${esc(c.equipe_nome)}</span>` : ''}${auditoriaChip(c.auditoria)}</div></div></a>
       <details class="menu"><summary aria-label="Ações de ${esc(c.nome)}">⋯</summary><div class="itens">
         <a href="/cidade.html?c=${c.slug}">Abrir</a>${repoOk ? `<button data-regerar="${c.slug}">Regerar do repositório</button>` : ''}${repoOk && meu && p === 'github' ? `<button data-webhook="${c.slug}">Atualizar a cada push</button>` : ''}
+        ${meu ? `<button data-publico="${c.slug}" data-ligado="${c.publico ? 1 : ''}">${c.publico ? 'Link público…' : 'Criar link público'}</button>` : ''}
         ${meu ? `<button class="perigo" data-apagar="${c.slug}" data-nome="${esc(c.nome)}">Apagar</button>` : ''}</div></details></article>`;
   }
   function cartaoUniverso(u) {
@@ -226,7 +227,18 @@
       $('#webhook').innerHTML = `<p style="margin:0;color:var(--tinta-2);font-size:14px">No repositório: <b style="color:var(--tinta)">Settings → Webhooks → Add webhook</b>.</p>
         <label class="campo-l">Payload URL<input readonly value="${esc(w.url)}" onclick="this.select()"></label><label class="campo-l">Content type<input readonly value="application/json"></label>
         <label class="campo-l">Secret<input readonly value="${esc(w.segredo)}" onclick="this.select()"></label><p style="margin:0;color:var(--tinta-2);font-size:13px">Evento: só push. A cada push na branch principal a cidade é regerada.</p>`;
-      $('#d-webhook').showModal(); });
+      $('#t-webhook').textContent = 'Atualizar a cada push'; $('#d-webhook').showModal(); });
+    $$('[data-publico]').forEach(b => b.onclick = async () => { b.closest('details').open = false; const slug = b.dataset.publico;
+      const c = P.cidades.find(x => x.slug === slug), token = c.publico || (await api('POST', `/api/cidades/${slug}/publico`, {})).publico;
+      const link = `${location.origin}/cidade.html?p=${token}`;
+      $('#webhook').innerHTML = `<p style="margin:0;color:var(--tinta-2);font-size:14px">Qualquer pessoa com este link vê o mapa da cidade, sem conta. Pastas, documentos, conversas e dados do time ficam de fora.</p>
+        <label class="campo-l">Link<input readonly value="${esc(link)}" onclick="this.select()"></label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primario p" id="pub-copiar">Copiar</button><a class="btn p" href="${esc(link)}" target="_blank" rel="noopener">Abrir</a><span style="flex:1"></span><button class="btn fantasma p" id="pub-trocar">Gerar outro</button><button class="btn fantasma p" id="pub-desligar" style="color:#ff8f9b">Desligar</button></div>`;
+      $('#t-webhook').textContent = 'Link público'; $('#d-webhook').showModal();
+      $('#pub-copiar').onclick = async () => { await navigator.clipboard.writeText(link).catch(() => {}); avisar('Link copiado.'); };
+      $('#pub-trocar').onclick = async () => { await api('POST', `/api/cidades/${slug}/publico`, {}); $('#d-webhook').close(); avisar('Link novo gerado; o antigo parou de funcionar.'); carregar(); };
+      $('#pub-desligar').onclick = async () => { await api('POST', `/api/cidades/${slug}/publico`, { ligar: false }); $('#d-webhook').close(); avisar('Link público desligado.'); carregar(); };
+      carregar(); });
     $$('[data-apagar]').forEach(b => b.onclick = async () => { b.closest('details').open = false; if (!confirm(`Apagar ${b.dataset.nome}?`)) return; await api('DELETE', `/api/cidades/${b.dataset.apagar}`); avisar('Projeto apagado.'); carregar(); });
     $$('[data-mais]').forEach(b => b.onclick = () => { b.closest('details').open = false; abrirNovo(b.dataset.mais); });
     $$('[data-religar]').forEach(b => b.onclick = async () => { b.closest('details').open = false; avisar('Redesenhando as ligações…'); try { const r = await api('POST', `/api/universos/${b.dataset.religar}/religar`, {}); avisar(`${r.length ?? (r.ligacoes || []).length} ligação(ões) entre os projetos.`); } catch (e) { avisar(e.message); } });

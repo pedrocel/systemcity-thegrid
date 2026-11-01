@@ -4,10 +4,10 @@ import { ErroUso } from './contas.mjs';
 
 // custoMes: teto de gasto com IA por pessoa no mês, em dólares; protege a conta quando alguém usa muito mais que a média
 export const PLANOS = {
-  gratis: { nome: 'Grátis', pessoas: 5, cidadesGithubMes: 2, perguntasDia: 30, auditoriasMes: 1, custoMes: 1 },
-  pro: { nome: 'Pro', preco: 'R$ 29,90/mês', pessoas: 10, cidadesGithubMes: 30, perguntasDia: 300, auditoriasMes: 20, custoMes: 4 },
-  time: { nome: 'Time', pessoas: 25, cidadesGithubMes: 30, perguntasDia: 500, auditoriasMes: 40, custoMes: 8 },
-  empresa: { nome: 'Empresa', pessoas: Infinity, cidadesGithubMes: Infinity, perguntasDia: Infinity, auditoriasMes: Infinity, custoMes: Infinity },
+  gratis: { nome: 'Grátis', pessoas: 5, cidadesGithubMes: 2, perguntasDia: 30, auditoriasMes: 1, custoMes: 1, apps: 0 },
+  pro: { nome: 'Pro', preco: 'R$ 29,90/mês', pessoas: 10, cidadesGithubMes: 30, perguntasDia: 300, auditoriasMes: 20, custoMes: 4, apps: 2 },
+  time: { nome: 'Time', pessoas: 25, cidadesGithubMes: 30, perguntasDia: 500, auditoriasMes: 40, custoMes: 8, apps: 5 },
+  empresa: { nome: 'Empresa', pessoas: Infinity, cidadesGithubMes: Infinity, perguntasDia: Infinity, auditoriasMes: Infinity, custoMes: Infinity, apps: Infinity },
 };
 const ligado = () => process.env.PLANOS === '1';
 
@@ -32,6 +32,9 @@ export function planos(db, { assinaturas = null, custos = null } = {}) {
       if (q.cidadesMes.get(u, inicio.getTime()).n >= p.cidadesGithubMes) throw new ErroUso(`O plano ${p.nome} gera até ${p.cidadesGithubMes} cidades do GitHub por mês.`, 402); },
     podeAuditar(u) { if (!ligado()) return; const p = PLANOS[daPessoa(u)], n = db.prepare('SELECT count(*) AS n FROM auditorias WHERE quem = ? AND criada >= ?').get(u, inicioMes()).n;
       if (n >= p.auditoriasMes) throw new ErroUso(`O plano ${p.nome} faz ${p.auditoriasMes} auditoria(s) por mês.`, 402); },
+    // projetos hospedados na nossa VPS (o dono da cidade é quem conta)
+    podeHospedar(u, quantos) { if (!ligado()) return; const p = PLANOS[daPessoa(u)];
+      if (quantos >= p.apps) throw new ErroUso(p.apps ? `O plano ${p.nome} hospeda até ${p.apps} projeto(s).` : 'Hospedar projetos é dos planos pagos.', 402); },
     // teto de custo de IA no mês: vale para tudo que chama o Claude
     podeUsarIA(u) { if (!ligado() || !custos) return; const p = PLANOS[daPessoa(u)];
       if (custos.doMes(u) >= p.custoMes) throw new ErroUso(`Você chegou ao limite de uso de IA do plano ${p.nome} neste mês.`, 402); },
