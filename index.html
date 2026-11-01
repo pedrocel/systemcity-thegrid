@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SystemCity · Sua arquitetura vira uma cidade viva</title>
+<meta name="description" content="Transforme a arquitetura do seu sistema numa cidade 3D ao vivo, converse e faça reuniões com o time, gere atas com atividades pelo Claude e faça a daily correndo no The Grid.">
+<meta property="og:title" content="SystemCity · Sua arquitetura vira uma cidade viva">
+<meta property="og:description" content="Cidade 3D do seu sistema, reuniões com atas pela IA e corrida de moto multiplayer para a daily.">
+<meta property="og:image" content="site/img/cidade.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=Red+Hat+Display:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site/estilo.css">
+<style>
+  section { padding: 96px 0; }
+  .rotulo { display: inline-flex; align-items: center; gap: 8px; font: 600 12px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--neon); }
+  .rotulo::before { content: ''; width: 18px; height: 1px; background: currentColor; }
+  .sec-titulo { font-size: clamp(30px, 4vw, 46px); font-weight: 800; letter-spacing: -.01em; margin: 14px 0 16px; max-width: 18ch; }
+  .sec-sub { color: var(--tinta-2); font-size: 18px; max-width: 56ch; margin: 0; }
+
+  /* herói */
+  .heroi { padding: 72px 0 40px; text-align: center; }
+  .selo { display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px; border: 1px solid var(--linha-forte); background: rgba(10, 18, 32, .6); font-size: 13.5px; color: var(--tinta-2); }
+  .selo b { background: rgba(55, 230, 255, .15); color: var(--neon); border-radius: 999px; padding: 3px 10px; font: 600 12px var(--mono); }
+  .heroi h1 { font-size: clamp(40px, 7vw, 84px); font-weight: 800; letter-spacing: -.025em; margin: 26px auto 22px; max-width: 14ch; }
+  .heroi h1 em { font-style: normal; background: linear-gradient(92deg, #37e6ff 10%, #a78bfa 55%, #f472b6 95%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 30px rgba(55, 230, 255, .35)); }
+  .heroi p { font-size: clamp(17px, 2vw, 20px); color: var(--tinta-2); max-width: 60ch; margin: 0 auto 34px; }
+  .heroi .ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .vitrine { margin: 64px auto 0; max-width: 1040px; perspective: 1800px; }
+  .moldura { position: relative; border-radius: 16px; border: 1px solid var(--linha-forte); background: #02050b; overflow: hidden; transform: rotateX(14deg) scale(.96); transform-origin: top; transition: transform .8s cubic-bezier(.2, .8, .2, 1);
+    box-shadow: 0 0 0 1px rgba(55, 230, 255, .08), 0 40px 120px rgba(55, 230, 255, .18), 0 30px 80px rgba(0, 0, 0, .6); }
+  .vitrine.reta .moldura { transform: none; }
+  .moldura .barra-jan { display: flex; gap: 7px; padding: 12px 14px; border-bottom: 1px solid var(--linha); background: rgba(10, 18, 32, .9); }
+  .moldura .barra-jan i { width: 11px; height: 11px; border-radius: 50%; background: #1d2a3d; }
+  .moldura .barra-jan span { margin-left: 10px; font: 12px var(--mono); color: var(--tinta-3); }
+  .moldura img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; }
+  .brilho { position: absolute; inset: auto 10% -40px; height: 120px; background: radial-gradient(ellipse, rgba(55, 230, 255, .35), transparent 70%); filter: blur(30px); z-index: -1; }
+
+  .numeros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--linha); border: 1px solid var(--linha); border-radius: var(--raio); overflow: hidden; margin-top: 72px; }
+  .numeros div { background: var(--noite-2); padding: 22px; text-align: center; }
+  .numeros b { display: block; font: 800 30px var(--titulo); color: var(--tinta); }
+  .numeros span { color: var(--tinta-2); font-size: 14px; }
+
+  /* recursos */
+  .recursos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 48px; }
+  .recurso { position: relative; padding: 26px; border-radius: var(--raio); border: 1px solid var(--linha); background: linear-gradient(180deg, rgba(16, 28, 48, .55), rgba(8, 14, 26, .55)); overflow: hidden; transition: border-color .2s, transform .2s; }
+  .recurso:hover { border-color: var(--linha-forte); transform: translateY(-3px); }
+  .recurso::after { content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; background: linear-gradient(140deg, var(--c), transparent 40%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; opacity: .55; pointer-events: none; }
+  .recurso .ico { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); margin-bottom: 18px; }
+  .recurso .ico svg { width: 22px; height: 22px; }
+  .recurso h3 { font-size: 19px; margin-bottom: 8px; }
+  .recurso p { color: var(--tinta-2); margin: 0; font-size: 15px; }
+
+  /* blocos alternados com imagem */
+  .bloco { display: grid; grid-template-columns: 1fr 1.1fr; gap: 56px; align-items: center; }
+  .bloco.inverte .texto { order: 2; }
+  .bloco ul { list-style: none; padding: 0; margin: 26px 0 0; display: grid; gap: 14px; }
+  .bloco li { display: grid; grid-template-columns: 26px 1fr; gap: 12px; color: var(--tinta); }
+  .bloco li::before { content: '◆'; color: var(--c, var(--neon)); font-size: 13px; padding-top: 3px; }
+  .bloco li small { display: block; color: var(--tinta-2); font-size: 14.5px; }
+  .foto { position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--linha-forte); box-shadow: 0 30px 80px rgba(0, 0, 0, .5), 0 0 60px color-mix(in srgb, var(--c, #37e6ff) 14%, transparent); }
+  .foto img { width: 100%; height: auto; }
+  .foto.dupla { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--linha); }
+  .foto.dupla img { aspect-ratio: 16 / 8; object-fit: cover; object-position: center 35%; }
+  .foto figcaption { position: absolute; left: 14px; bottom: 14px; font: 600 12px var(--mono); background: rgba(2, 5, 11, .8); padding: 5px 10px; border-radius: 7px; color: var(--tinta-2); }
+
+  /* The Grid em destaque */
+  .grid-sec { position: relative; overflow: hidden; border-top: 1px solid var(--linha); border-bottom: 1px solid var(--linha); background: radial-gradient(ellipse at 70% 50%, rgba(255, 138, 60, .08), transparent 60%), linear-gradient(180deg, rgba(2, 5, 11, .3), rgba(2, 5, 11, .8)); }
+  .grid-sec .sec-titulo span { color: var(--laranja); text-shadow: 0 0 30px rgba(255, 138, 60, .45); }
+  .pontos { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+  .pontos span { font: 600 13px var(--mono); padding: 7px 12px; border-radius: 9px; border: 1px solid var(--linha-forte); background: rgba(10, 18, 32, .7); }
+  .pontos span b { color: var(--ouro); }
+
+  /* passos */
+  .passos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 48px; counter-reset: p; }
+  .passo { padding: 28px; border-radius: var(--raio); border: 1px solid var(--linha); background: rgba(8, 14, 26, .6); counter-increment: p; }
+  .passo::before { content: counter(p, decimal-leading-zero); font: 800 44px var(--titulo); color: transparent; -webkit-text-stroke: 1px var(--neon); display: block; margin-bottom: 14px; opacity: .8; }
+  .passo h3 { font-size: 19px; margin-bottom: 8px; }
+  .passo p { color: var(--tinta-2); margin: 0; font-size: 15px; }
+  .passo code { font: 13px var(--mono); color: var(--neon); }
+
+  /* chamada final */
+  .final { text-align: center; }
+  .final .cartao { padding: 64px 24px; background: radial-gradient(ellipse at 50% 0%, rgba(55, 230, 255, .16), transparent 60%), var(--vidro); border-color: var(--linha-forte); }
+  .final h2 { font-size: clamp(30px, 4.6vw, 52px); font-weight: 800; letter-spacing: -.01em; max-width: 18ch; margin: 0 auto 16px; }
+  .final p { color: var(--tinta-2); font-size: 18px; margin: 0 auto 30px; max-width: 50ch; }
+  footer { border-top: 1px solid var(--linha); padding: 32px 0 48px; color: var(--tinta-3); font-size: 14px; }
+  footer .envelope { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  footer a { color: var(--tinta-2); text-decoration: none; }
+  footer nav { margin-left: auto; display: flex; gap: 18px; }
+
+  /* entrada suave ao rolar */
+  .surge { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s cubic-bezier(.2, .8, .2, 1); }
+  .surge.visto { opacity: 1; transform: none; }
+
+  @media (max-width: 960px) { .recursos, .passos { grid-template-columns: 1fr 1fr; } .bloco { grid-template-columns: 1fr; gap: 32px; } .bloco.inverte .texto { order: 0; } }
+  @media (max-width: 640px) { section { padding: 64px 0; } .recursos, .passos { grid-template-columns: 1fr; } .numeros { grid-template-columns: 1fr 1fr; } .moldura { transform: none; } footer nav { margin-left: 0; } .nav-acoes .btn.fantasma { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .surge { opacity: 1; transform: none; } .moldura { transform: none; } }
+</style>
+</head>
+<body>
+<div class="fundo" aria-hidden="true"></div>
+
+<header class="nav"><div class="envelope">
+  <a class="marca" href="/"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="14" width="7" height="15" rx="1.5" fill="none" stroke="#37e6ff" stroke-width="2"/><rect x="12.5" y="4" width="7" height="25" rx="1.5" fill="none" stroke="#37e6ff" stroke-width="2"/><rect x="22" y="10" width="7" height="19" rx="1.5" fill="none" stroke="#a78bfa" stroke-width="2"/></svg><span>System<b>City</b></span></a>
+  <nav class="nav-links" aria-label="Seções"><a href="#recursos">Recursos</a><a href="#reunioes">Reuniões com IA</a><a href="#grid">The Grid</a><a href="#como">Como funciona</a></nav>
+  <div class="nav-acoes" id="nav-acoes"><a class="btn fantasma" href="/entrar.html">Entrar</a><a class="btn primario" href="/entrar.html#criar">Criar conta</a></div>
+</div></header>
+
+<main>
+  <section class="heroi envelope">
+    <span class="selo surge"><b>NOVO</b> The Grid: faça a daily numa corrida de moto</span>
+    <h1 class="surge">Sua arquitetura vira uma <em>cidade viva</em></h1>
+    <p class="surge">Cada módulo é um bairro, cada etapa é um prédio e cada requisição é alguém andando pelas ruas. O time conversa, se reúne e corre junto dentro da cidade, e a reunião sai com as atividades escritas pelo Claude.</p>
+    <div class="ctas surge"><a class="btn primario grande" href="/entrar.html#criar">Criar conta grátis</a><a class="btn grande" href="/cidade.html">Ver a cidade de exemplo →</a></div>
+    <div class="vitrine surge" id="vitrine">
+      <div class="moldura"><div class="barra-jan" aria-hidden="true"><i></i><i></i><i></i><span>systemcity · loja online</span></div>
+        <img src="site/img/cidade.jpg" alt="Cidade 3D com três bairros (Pedidos, Pagamentos e Logística) ligados por ruas, com prédios iluminados e sistemas externos nas bordas" width="800" height="600"></div>
+      <div class="brilho" aria-hidden="true"></div>
+    </div>
+    <div class="numeros surge">
+      <div><b>3D</b><span>em tempo real no navegador</span></div>
+      <div><b>MCP</b><span>e APIs como fonte de dados</span></div>
+      <div><b>IA local</b><span>atas e atividades pelo Claude</span></div>
+      <div><b>12</b><span>motos por corrida</span></div>
+    </div>
+  </section>
+
+  <section id="recursos" class="envelope">
+    <span class="rotulo surge">Recursos</span>
+    <h2 class="sec-titulo surge">Tudo que o time precisa, no mesmo lugar</h2>
+    <p class="sec-sub surge">Da arquitetura ao papo do dia a dia: o SystemCity junta a visão do sistema, a comunicação do time e um pouco de diversão.</p>
+    <div class="recursos">
+      <article class="recurso surge" style="--c:#37e6ff"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M5 21V10l4-3v14M13 21V4l6 4v13"/></svg></div><h3>Cidade 3D do sistema</h3><p>Bairros, prédios, ruas e desvios mostram como o sistema funciona. A fila cresce e o prédio cresce; algo falha e acende o desvio vermelho.</p></article>
+      <article class="recurso surge" style="--c:#a78bfa"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h4l3-7 3 14 3-7h3"/></svg></div><h3>Dados ao vivo</h3><p>Ligue suas APIs, webhooks e servidores MCP. Cada evento real vira um operário andando pela cidade.</p></article>
+      <article class="recurso surge" style="--c:#5fd38d"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v11H8l-4 4z"/></svg></div><h3>Conversas e chamadas</h3><p>Chat direto e em grupo, chamadas de voz e vídeo com compartilhamento de tela, e quem está online andando pela cidade.</p></article>
+      <article class="recurso surge" style="--c:#f472b6"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 4h10v16H7zM10 8h4M10 12h4M10 16h2"/></svg></div><h3>Atas pelo Claude</h3><p>Ligue a transcrição na chamada. No fim, o Claude escreve a ata: resumo, decisões, atividades com responsável e candidatos a ticket.</p></article>
+      <article class="recurso surge" style="--c:#ffd24a"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 20c0-2.4 1.3-4.4 3.5-4.9"/></svg></div><h3>Equipes</h3><p>Crie equipes, adicione as pessoas pelo nick e dê papéis de dono, admin e membro. Cada equipe ganha conversa e chamada próprias.</p></article>
+      <article class="recurso surge" style="--c:#ff8a3c"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="16" r="3"/><circle cx="18" cy="16" r="3"/><path d="M6 16l4-6h5l3 6M10 10l-1-3h-2"/></svg></div><h3>The Grid</h3><p>Corrida de moto multiplayer estilo Tron, com chamada de voz no canto da tela. A daily nunca mais vai ser chata.</p></article>
+    </div>
+  </section>
+
+  <section id="reunioes" class="envelope">
+    <div class="bloco">
+      <div class="texto">
+        <span class="rotulo surge">Reuniões com IA</span>
+        <h2 class="sec-titulo surge">Saia da reunião com o trabalho já organizado</h2>
+        <p class="sec-sub surge">Ninguém precisa anotar. A chamada é transcrita, e o Claude que roda na sua máquina transforma a conversa em atividades.</p>
+        <ul class="surge" style="--c:#f472b6">
+          <li><span>Legendas ao vivo<small>Todos veem o que está sendo dito, enquanto é dito.</small></span></li>
+          <li><span>Atividades com responsável e prazo<small>Só o que foi combinado: a IA não inventa tarefa nem dono.</small></span></li>
+          <li><span>Candidatos a ticket<small>Uma tabela pronta para virar ticket no seu sistema, como o Jira, o Linear ou o GitHub Issues.</small></span></li>
+          <li><span>Baixe, copie ou envie<small>A ata sai em .md e chega a qualquer pessoa da equipe com um clique.</small></span></li>
+        </ul>
+      </div>
+      <figure class="foto surge" style="--c:#f472b6;margin:0"><img src="site/img/ata.jpg" alt="Ata gerada pelo Claude com resumo, decisões e atividades, aberta ao lado da cidade" width="800" height="654" loading="lazy"><figcaption>ata gerada pelo Claude</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="grid" class="grid-sec">
+    <div class="envelope bloco inverte">
+      <div class="texto">
+        <span class="rotulo surge" style="color:var(--laranja)">The Grid</span>
+        <h2 class="sec-titulo surge">A daily do time, <span>a 400 km/h</span></h2>
+        <p class="sec-sub surge">Crie uma corrida, chame o time e conversem pela chamada de voz enquanto pilotam. Ao final, pódio, pontos e placar geral.</p>
+        <ul class="surge" style="--c:#ff8a3c">
+          <li><span>Até 12 motos na pista<small>Cada piloto com a sua cor, vendo os outros em tempo real.</small></span></li>
+          <li><span>Voltas ou tempo-limite<small>Do jeito que a daily pedir: 3 voltas ou 15 minutos.</small></span></li>
+          <li><span>Chamada no canto da tela<small>Fale, ouça e pilote ao mesmo tempo.</small></span></li>
+        </ul>
+        <div class="pontos surge"><span>1º <b>25</b></span><span>2º <b>18</b></span><span>3º <b>15</b></span><span>melhor volta <b>+5</b></span><span>completou <b>+3</b></span></div>
+      </div>
+      <div class="foto dupla surge" style="--c:#ff8a3c">
+        <figure style="margin:0;position:relative"><img src="site/img/corrida.jpg" alt="Visão do piloto na pista de neon, com painel de posição, volta, tempo e velocidade" width="800" height="654" loading="lazy"><figcaption>na pista</figcaption></figure>
+        <figure style="margin:0;position:relative"><img src="site/img/resultado.jpg" alt="Resultado da corrida com pódio, tempos, melhor volta e pontos de cada piloto" width="800" height="654" loading="lazy"><figcaption>pódio e pontos</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="como" class="envelope">
+    <span class="rotulo surge">Como funciona</span>
+    <h2 class="sec-titulo surge">Do zero à cidade em minutos</h2>
+    <div class="passos">
+      <article class="passo surge"><h3>Crie sua conta e a equipe</h3><p>Escolha um nick, crie a equipe e adicione as pessoas pelo nick delas.</p></article>
+      <article class="passo surge"><h3>Monte a cidade</h3><p>Descreva os módulos num arquivo, ou parta da cidade de exemplo. Os documentos de cada módulo viram uma torre no bairro.</p></article>
+      <article class="passo surge"><h3>Ligue os dados</h3><p>Conecte APIs, webhooks e servidores MCP pelo bridge, e a cidade passa a mostrar o tráfego real. <code>npm run demo</code> mostra como.</p></article>
+    </div>
+  </section>
+
+  <section class="envelope final">
+    <div class="cartao surge">
+      <h2>Bora ver a sua arquitetura acender?</h2>
+      <p>Crie a conta, chame o time e marque a primeira daily no The Grid.</p>
+      <div class="ctas" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap"><a class="btn primario grande" href="/entrar.html#criar">Criar conta grátis</a><a class="btn grande" href="/cidade.html">Ver a cidade de exemplo</a></div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="envelope">
+  <a class="marca" href="/" style="font-size:16px"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="14" width="7" height="15" rx="1.5" fill="none" stroke="#37e6ff" stroke-width="2"/><rect x="12.5" y="4" width="7" height="25" rx="1.5" fill="none" stroke="#37e6ff" stroke-width="2"/><rect x="22" y="10" width="7" height="19" rx="1.5" fill="none" stroke="#a78bfa" stroke-width="2"/></svg><span>System<b>City</b></span></a>
+  <span>© 2026 SystemCity</span>
+  <nav aria-label="Rodapé"><a href="/cidade.html">Cidade</a><a href="/equipes.html">Equipes</a><a href="/entrar.html">Entrar</a></nav>
+</div></footer>
+
+<script src="site/sessao.js"></script>
+<script>
+(() => {
+  // quem já está logado vê "Abrir a cidade" e "Equipes" em vez de entrar e criar conta
+  SC.eu().then(eu => { if (!eu) return;
+    document.getElementById('nav-acoes').innerHTML = `<a class="btn fantasma" href="/equipes.html">Equipes</a><a class="btn primario" href="/cidades.html">Minhas cidades</a>`;
+    for (const a of document.querySelectorAll('a[href="/entrar.html#criar"]')) { a.href = '/equipes.html'; a.textContent = 'Ir para minhas equipes'; } });
+  // elementos surgem ao rolar; a vitrine do topo se endireita
+  // conferido a cada rolagem (e não só pelo IntersectionObserver), para nunca deixar conteúdo escondido
+  const pendentes = new Set(document.querySelectorAll('.surge'));
+  [...pendentes].forEach((el, i) => { el.style.transitionDelay = el.closest('.heroi') ? `${i * 90}ms` : '0ms'; });
+  const revelar = () => { for (const el of pendentes) if (el.getBoundingClientRect().top < innerHeight * 0.92) { el.classList.add('visto'); pendentes.delete(el); } };
+  addEventListener('scroll', revelar, { passive: true }); addEventListener('resize', revelar); revelar();
+  const conferir = setInterval(() => { revelar(); if (!pendentes.size) clearInterval(conferir); }, 200);
+  const v = document.getElementById('vitrine'); const endireitar = () => v.classList.toggle('reta', scrollY > 80); addEventListener('scroll', endireitar, { passive: true }); setTimeout(() => v.classList.add('reta'), 1400);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Senha · SystemCity</title>
+<meta name="description" content="Recupere o acesso à sua conta do SystemCity.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=Red+Hat+Display:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site/estilo.css">
+<style>
+  main { min-height: calc(100vh - 64px); display: grid; place-items: center; padding: 32px 0; }
+  .cartao { width: min(420px, calc(100vw - 32px)); padding: 28px; display: grid; gap: 14px; }
+  h1 { font-size: 24px; font-weight: 800; } p { margin: 0; color: var(--tinta-2); font-size: 14.5px; }
+</style>
+</head>
+<body>
+<div class="fundo" aria-hidden="true"></div>
+<header class="nav"><div class="envelope">
+  <a class="marca" href="/"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="14" width="7" height="15" rx="1.5" fill="none" stroke="#37e6ff" stroke-width="2"/><rect x="12.5" y="4" width="7" height="25" rx="1.5" fill="none" stroke="#37e6ff" stroke-width="2"/><rect x="22" y="10" width="7" height="19" rx="1.5" fill="none" stroke="#a78bfa" stroke-width="2"/></svg><span>System<b>City</b></span></a>
+  <div class="nav-acoes"><a class="btn fantasma" href="/entrar.html">Entrar</a></div>
+</div></header>
+<main>
+  <form class="cartao" id="f-pedir" hidden novalidate>
+    <h1>Esqueceu a senha?</h1><p>Informe o e-mail da conta. Se ela existir, mandamos um link para criar uma senha nova.</p>
+    <label class="campo">E-mail<input name="email" type="email" autocomplete="email" required autofocus></label>
+    <p class="erro" role="alert"></p><button class="btn primario grande">Mandar o link</button>
+  </form>
+  <form class="cartao" id="f-nova" hidden novalidate>
+    <h1>Crie uma senha nova</h1>
+    <label class="campo">Senha nova<input name="senha" type="password" autocomplete="new-password" minlength="8" required autofocus><small>Pelo menos 8 caracteres.</small></label>
+    <p class="erro" role="alert"></p><button class="btn primario grande">Salvar e entrar</button>
+  </form>
+  <div class="cartao" id="enviado" hidden role="status"><h1>Confira seu e-mail</h1><p id="enviado-txt"></p><a class="btn" href="/entrar.html">Voltar para entrar</a></div>
+</main>
+<script src="site/sessao.js"></script>
+<script>
+(() => {
+  const token = new URLSearchParams(location.search).get('t'), $ = (s) => document.querySelector(s);
+  const f = token ? $('#f-nova') : $('#f-pedir'); f.hidden = false;
+  f.addEventListener('submit', async (ev) => { ev.preventDefault(); const erro = f.querySelector('.erro'), bt = f.querySelector('button'); erro.textContent = ''; bt.disabled = true;
+    try {
+      if (token) { await SC.api('POST', '/api/senha/redefinir', { token, senha: f.senha.value }); location.replace('/cidades.html'); return; }
+      const r = await SC.api('POST', '/api/senha/esqueci', { email: f.email.value }); f.hidden = true; $('#enviado').hidden = false;
+      $('#enviado-txt').textContent = r.email ? `Se existir uma conta com ${f.email.value}, o link chega em instantes. Ele vale 1 hora.` : 'O envio de e-mail ainda não está ligado neste servidor. Peça ao administrador um link de redefinição.';
+    } catch (e) { erro.textContent = e.message; bt.disabled = false; } });
+})();
+</script>
+</body>
+</html>

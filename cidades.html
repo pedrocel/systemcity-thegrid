@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projetos · SystemCity</title>
+<meta name="description" content="Seus projetos no SystemCity: cada repositório vira uma cidade.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=Red+Hat+Display:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site/estilo.css">
+<style>
+  main { padding: 28px 0 80px; }
+  .topo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+  .topo h1 { font-size: 22px; font-weight: 800; margin: 0 6px 0 0; letter-spacing: -.01em; }
+  .topo .n { font: 600 12px var(--mono); color: var(--tinta-2); border: 1px solid var(--linha); border-radius: 6px; padding: 1px 7px; }
+  .topo .esp { flex: 1; }
+  .busca { position: relative; } .busca input { width: 240px; padding: 8px 10px 8px 30px; border-radius: 8px; border: 1px solid var(--linha-forte); background: rgba(4,9,18,.6); color: var(--tinta); font: 14px var(--texto, inherit); }
+  .busca svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); opacity: .55; }
+  .btn.p { padding: 8px 14px; font-size: 14px; }
+  .contas-bt { display: inline-flex; gap: 8px; align-items: center; }
+  .pontos { display: inline-flex; gap: 3px; } .pontos i { width: 7px; height: 7px; border-radius: 50%; background: var(--linha-forte); } .pontos i.on { background: var(--verde, #5fd38d); }
+
+  .filtros { display: flex; gap: 2px; border-bottom: 1px solid var(--linha); margin-bottom: 18px; overflow-x: auto; }
+  .filtros button { background: none; border: 0; color: var(--tinta-2); font: 500 14px inherit; padding: 8px 12px; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
+  .filtros button[aria-pressed="true"] { color: var(--tinta); border-bottom-color: var(--neon); }
+  .filtros small { font: 12px var(--mono); color: var(--tinta-3, #6b7d96); margin-left: 4px; }
+
+  .grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .proj { position: relative; border: 1px solid var(--linha); border-radius: 12px; background: rgba(8,14,26,.72); transition: border-color .15s, transform .15s; }
+  .proj:hover { border-color: rgba(55,230,255,.45); }
+  .proj > a { display: block; color: inherit; text-decoration: none; }
+  .mini { display: block; width: 100%; height: 150px; border-radius: 11px 11px 0 0; background: radial-gradient(120% 90% at 50% 100%, rgba(55,230,255,.07), transparent 60%), #060b15; border-bottom: 1px solid var(--linha); }
+  .proj .corpo { padding: 12px 14px 14px; display: grid; gap: 6px; }
+  .proj h3 { margin: 0; font-size: 15.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; padding-right: 28px; }
+  .proj h3 span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .origem { display: flex; align-items: center; gap: 6px; font: 12.5px var(--mono); color: var(--tinta-2); min-width: 0; } .origem span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .glifo { flex: none; width: 16px; height: 16px; border-radius: 4px; display: grid; place-items: center; font: 700 9px var(--mono); color: #0b0f17; background: var(--c); }
+  .meta { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--tinta-2); flex-wrap: wrap; margin-top: 2px; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 1px 8px; font-size: 12px; border: 1px solid var(--linha); }
+  .chip.mal { color: #ffb3bb; border-color: rgba(255,77,94,.45); background: rgba(255,77,94,.08); } .chip.bem { color: #9be7b8; border-color: rgba(95,211,141,.35); }
+  .chip.vai { color: #9fd8ff; } .chip.junto { color: #f5b8de; border-color: rgba(244,114,182,.4); }
+  .menu { position: absolute; top: 158px; right: 8px; } .menu summary { list-style: none; cursor: pointer; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 6px; color: var(--tinta-2); }
+  .menu summary::-webkit-details-marker { display: none; } .menu summary:hover, .menu[open] summary { background: rgba(255,255,255,.06); color: var(--tinta); }
+  .menu .itens { position: absolute; right: 0; top: 32px; z-index: 5; min-width: 200px; background: #0b1322; border: 1px solid var(--linha-forte); border-radius: 10px; padding: 4px; box-shadow: 0 12px 30px rgba(0,0,0,.45); display: grid; }
+  .menu .itens button, .menu .itens a { background: none; border: 0; color: var(--tinta); text-align: left; font: 14px inherit; padding: 8px 10px; border-radius: 6px; cursor: pointer; text-decoration: none; }
+  .menu .itens button:hover, .menu .itens a:hover { background: rgba(255,255,255,.06); } .menu .itens .perigo { color: #ff8f9b; }
+  .vazio-g { border: 1px dashed var(--linha-forte); border-radius: 12px; padding: 40px 20px; text-align: center; color: var(--tinta-2); display: grid; gap: 12px; justify-items: center; }
+  .vazio-g b { color: var(--tinta); font-size: 16px; }
+  .novo-card { border: 1px dashed var(--linha-forte); border-radius: 12px; display: grid; place-items: center; min-height: 248px; color: var(--tinta-2); background: none; cursor: pointer; font: 500 14px inherit; }
+  .novo-card:hover { border-color: var(--neon); color: var(--tinta); } .novo-card i { display: block; font-size: 26px; font-style: normal; text-align: center; margin-bottom: 6px; }
+  .proj.ocupada::after { content: ""; position: absolute; inset: 0; border-radius: 12px; background: linear-gradient(90deg, transparent, rgba(55,230,255,.08), transparent); background-size: 200% 100%; animation: brilho 1.4s linear infinite; pointer-events: none; }
+  @keyframes brilho { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+  dialog.janela { width: min(680px, calc(100vw - 24px)); max-height: calc(100vh - 40px); padding: 0; border: 1px solid var(--linha-forte); border-radius: 14px; background: #0a111f; color: var(--tinta); }
+  dialog.janela::backdrop { background: rgba(2,5,10,.7); backdrop-filter: blur(2px); }
+  .j-cab { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--linha); } .j-cab h2 { margin: 0; font-size: 16px; font-weight: 600; flex: 1; }
+  .j-cab button { background: none; border: 0; color: var(--tinta-2); font-size: 20px; cursor: pointer; line-height: 1; padding: 4px; }
+  .j-corpo { padding: 16px 18px; display: grid; gap: 12px; overflow: auto; overflow-x: hidden; max-height: calc(100vh - 190px); }
+  .j-pe { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-top: 1px solid var(--linha); flex-wrap: wrap; } .j-pe .esp { flex: 1; }
+  .abas { display: flex; gap: 2px; padding: 0 18px; border-bottom: 1px solid var(--linha); }
+  .abas button { background: none; border: 0; color: var(--tinta-2); font: 500 14px inherit; padding: 10px 10px; border-bottom: 2px solid transparent; cursor: pointer; }
+  .abas button[aria-selected="true"] { color: var(--tinta); border-bottom-color: var(--neon); }
+  .campo-l { display: grid; gap: 5px; font-size: 13px; color: var(--tinta-2); }
+  .campo-l input, .campo-l select { padding: 9px 10px; border-radius: 8px; border: 1px solid var(--linha-forte); background: rgba(2,6,12,.7); color: var(--tinta); font: 14px inherit; }
+  .duas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .repos { display: grid; max-height: 320px; overflow: auto; border: 1px solid var(--linha); border-radius: 10px; }
+  .repo { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--linha); cursor: pointer; } .repo:last-child { border-bottom: 0; }
+  .repo:hover { background: rgba(255,255,255,.03); } .repo:has(input:checked) { background: rgba(55,230,255,.07); }
+  .repo input { accent-color: #37e6ff; width: 16px; height: 16px; flex: none; } .repo span { display: grid; min-width: 0; flex: 1; font-size: 14px; }
+  .repo small { color: var(--tinta-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; } .repo time { color: var(--tinta-3, #6b7d96); font: 12px var(--mono); flex: none; }
+  .repo .priv { font: 11px var(--mono); color: var(--tinta-2); border: 1px solid var(--linha); border-radius: 4px; padding: 0 4px; margin-left: 6px; }
+  .sem-conta { padding: 22px; text-align: center; color: var(--tinta-2); font-size: 14px; display: grid; gap: 10px; justify-items: center; }
+  .escolhidos { display: flex; flex-wrap: wrap; gap: 6px; } .escolhidos:empty { display: none; }
+  .escolhidos span { display: inline-flex; align-items: center; gap: 6px; background: rgba(55,230,255,.1); border: 1px solid rgba(55,230,255,.3); border-radius: 6px; padding: 2px 4px 2px 8px; font: 12.5px var(--mono); }
+  .escolhidos button { background: none; border: 0; color: inherit; cursor: pointer; font-size: 15px; padding: 0 4px; }
+  .modelos { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  .modelo { text-align: left; border: 1px solid var(--linha); border-radius: 10px; padding: 12px; background: rgba(2,6,12,.5); color: var(--tinta); cursor: pointer; display: grid; gap: 4px; font: inherit; }
+  .modelo:hover { border-color: var(--neon); } .modelo small { color: var(--tinta-2); font-size: 12.5px; line-height: 1.4; } .modelo em { font: 11.5px var(--mono); font-style: normal; color: var(--neon); }
+  .progresso { display: none; align-items: center; gap: 10px; font-size: 13.5px; color: var(--tinta-2); } .progresso.ativo { display: flex; }
+  .progresso i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--linha-forte); border-top-color: var(--neon); animation: gira .8s linear infinite; flex: none; } @keyframes gira { to { transform: rotate(360deg); } }
+  .erro { color: #ff8f9b; font-size: 13.5px; margin: 0; } .erro:empty { display: none; }
+  .conta { display: grid; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--linha); } .conta:last-child { border-bottom: 0; }
+  .conta-cab { display: flex; align-items: center; gap: 10px; } .conta-cab .glifo { width: 26px; height: 26px; font-size: 11px; border-radius: 7px; }
+  .conta-cab b { font-weight: 600; } .conta-cab span { color: var(--tinta-2); font-size: 13px; white-space: nowrap; } .conta-cab { flex-wrap: wrap; } .conta-cab .esp { flex: 1; }
+  .conta-cab .ok { color: #9be7b8; }
+  .conta form { display: grid; gap: 8px; padding-left: 36px; } .conta form .dica { margin: 0; font-size: 12.5px; color: var(--tinta-2); }
+  .webhook input { font: 12.5px var(--mono); }
+  .plano-pill { font: 600 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; border: 1px solid var(--linha-forte); border-radius: 999px; padding: 4px 10px; color: var(--tinta-2); text-decoration: none; white-space: nowrap; } .plano-pill.pro { color: #37e6ff; border-color: rgba(55,230,255,.5); }
+  @media (max-width: 640px) { .so-largo { display: none; } .novo-card { min-height: 90px; } .busca input { width: 100%; } .busca { flex: 1 1 100%; order: 5; } .duas { grid-template-columns: 1fr; } .topo h1 { font-size: 20px; } }
+</style>
+</head>
+<body>
+<div class="fundo" aria-hidden="true"></div>
+<header class="nav"><div class="envelope">
+  <a class="marca" href="/"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="14" width="7" height="15" rx="1.5" fill="none" stroke="#37e6ff" stroke-width="2"/><rect x="12.5" y="4" width="7" height="25" rx="1.5" fill="none" stroke="#37e6ff" stroke-width="2"/><rect x="22" y="10" width="7" height="19" rx="1.5" fill="none" stroke="#a78bfa" stroke-width="2"/></svg><span>System<b>City</b></span></a>
+  <nav class="nav-links" aria-label="Principal"><a href="/cidades.html" aria-current="page" style="color:var(--tinta)">Projetos</a><a href="/equipes.html">Equipes</a></nav>
+  <div class="nav-acoes"></div>
+</div></header>
+
+<main class="envelope" id="painel" aria-busy="true">
+  <div class="topo">
+    <h1>Projetos</h1><span class="n" id="n-proj">0</span>
+    <span class="esp"></span>
+    <label class="busca"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5"/></svg><span class="so-leitor">Buscar projeto</span><input id="busca" placeholder="Buscar" autocomplete="off" spellcheck="false"></label>
+    <button class="btn p contas-bt" id="b-contas"><span class="pontos" id="pontos"><i></i><i></i><i></i></span>Contas</button>
+    <button class="btn primario p" id="b-novo">Novo projeto</button>
+  </div>
+  <div class="filtros" id="filtros" role="group" aria-label="Filtrar projetos"></div>
+  <div class="grade" id="grade"></div>
+</main>
+
+<dialog class="janela" id="d-novo" aria-labelledby="t-novo">
+  <div class="j-cab"><h2 id="t-novo">Novo projeto</h2><button data-fecha aria-label="Fechar">×</button></div>
+  <div class="abas" role="tablist"><button role="tab" aria-selected="true" data-aba="repos">Repositórios</button><button role="tab" aria-selected="false" data-aba="modelo">Modelo pronto</button></div>
+  <div class="j-corpo" data-painel="repos">
+    <label class="campo-l"><span class="so-leitor">Buscar repositório</span><input id="busca-repo" placeholder="Buscar nos seus repositórios" autocomplete="off" spellcheck="false"></label>
+    <div class="repos" id="repos"></div>
+    <div class="escolhidos" id="escolhidos"></div>
+    <div class="duas"><label class="campo-l">Nome<input id="n-nome" maxlength="60" placeholder="Automático"></label><label class="campo-l">Equipe<select id="n-equipe"><option value="">Só eu</option></select></label></div>
+    <details><summary style="cursor:pointer;color:var(--tinta-2);font-size:13px">Repositório público por endereço</summary>
+      <div style="display:flex;gap:8px;margin-top:8px"><label class="campo-l" style="flex:1"><span class="so-leitor">Endereço</span><input id="repo-manual" placeholder="dono/nome ou bitbucket:time/nome" spellcheck="false"></label><button class="btn p" id="add-manual" type="button">Adicionar</button></div></details>
+    <div class="progresso" id="progresso"><i></i><span id="progresso-txt"></span></div><p class="erro" id="erro-novo" role="alert"></p>
+  </div>
+  <div class="j-corpo" data-painel="modelo" hidden><div class="modelos" id="modelos"></div></div>
+  <div class="j-pe" data-pe="repos"><span id="dica-novo" style="color:var(--tinta-2);font-size:13px">Vários repositórios viram uma cidade só.</span><span class="esp"></span><button class="btn p" data-fecha>Cancelar</button><button class="btn primario p" id="b-gerar" disabled>Criar</button></div>
+</dialog>
+
+<dialog class="janela" id="d-contas" aria-labelledby="t-contas">
+  <div class="j-cab"><h2 id="t-contas">Contas</h2><button data-fecha aria-label="Fechar">×</button></div>
+  <div class="j-corpo" id="contas"></div>
+</dialog>
+
+<dialog class="janela webhook" id="d-webhook" aria-labelledby="t-webhook">
+  <div class="j-cab"><h2 id="t-webhook">Atualizar a cada push</h2><button data-fecha aria-label="Fechar">×</button></div>
+  <div class="j-corpo" id="webhook"></div>
+</dialog>
+
+<script src="site/sessao.js"></script>
+<script>
+(async () => {
+  const { api, esc, avisar } = SC, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  let eu = await SC.eu();
+  if (eu === null) return location.replace('/entrar.html?volta=/cidades.html');
+  if (eu === undefined) { $('#painel').innerHTML = '<p class="vazio">Esta página precisa do servidor do SystemCity ligado.</p>'; return; }
+
+  { const pl = $('#plano-pill'), pro = eu.plano && eu.plano !== 'gratis'; pl.innerHTML = pro ? ({ pro: 'Pro', time: 'Time', empresa: 'Empresa' }[eu.plano] || esc(eu.plano)) : 'Grátis<span class="so-largo"> · assinar Pro</span>'; pl.classList.toggle('pro', pro); }
+  const PROV = { github: ['GitHub', 'GH', '#e6edf3'], bitbucket: ['Bitbucket', 'BB', '#4c9aff'], codecommit: ['CodeCommit', 'CC', '#ff9900'], modelo: ['Modelo', 'M', '#a78bfa'] };
+  const provDe = (fonte) => String(fonte).split(':')[0];
+  const glifo = (p) => `<i class="glifo" style="--c:${PROV[p][2]}" title="${PROV[p][0]}">${PROV[p][1]}</i>`;
+  const ha = (t) => { const s = (Date.now() - t) / 1000; return s < 60 ? 'agora' : s < 3600 ? `há ${Math.round(s / 60)} min` : s < 86400 ? `há ${Math.round(s / 3600)} h` : s < 86400 * 30 ? `há ${Math.round(s / 86400)} d` : new Date(t).toLocaleDateString('pt-BR'); };
+  const P = { cidades: [], universos: [], modelos: [], filtro: 'todos', busca: '', ocupadas: new Set() };
+
+  // a miniatura: os bairros em isométrico, cada um com a cor dele e uma quadra de prédios proporcional às estações
+  function miniatura(mapas) {
+    const pol = [], blocos = []; let k = 0, dx = 0;
+    for (const m of mapas) {
+      const xs = m.b.map(b => b[0]).concat(m.e.map(e => e[0])), x0 = xs.length ? Math.min(...xs) : 0, x1 = Math.max(0, ...m.b.map(b => b[0] + b[2]), ...m.e.map(e => e[0] + 1));
+      for (const [i, j, c, l, cor, n] of m.b) { const ii = i - x0 + dx, hex = '#' + Number(cor).toString(16).padStart(6, '0');
+        pol.push({ i: ii, j, c, l, hex }); for (let q = 0; q < Math.min(n, 8); q++) blocos.push({ i: ii + 0.6 + (q % 3) * (c - 1.2) / 2.4, j: j + 0.6 + Math.floor(q / 3) * (l - 1.2) / 2.4, h: 0.6 + ((q * 7 + k) % 5) * 0.35, hex }); k++; }
+      for (const [i, j] of m.e) blocos.push({ i: i - x0 + dx + 0.3, j: j + 0.3, h: 1.6, hex: '#7c8db0' });
+      dx += x1 - x0 + 2;
+    }
+    if (!pol.length) return '<svg class="mini" viewBox="0 0 300 150"></svg>';
+    const iso = (i, j) => [i * 9 - j * 4.5, i * 1.6 + j * 4];   // vista de três quartos: a fila de bairros corre na largura do cartão
+    const pts = pol.flatMap(p => [iso(p.i, p.j), iso(p.i + p.c, p.j), iso(p.i, p.j + p.l), iso(p.i + p.c, p.j + p.l)]).concat(blocos.map(b => iso(b.i, b.j)));
+    const minX = Math.min(...pts.map(p => p[0])), maxX = Math.max(...pts.map(p => p[0])), minY = Math.min(...pts.map(p => p[1])) - 10, maxY = Math.max(...pts.map(p => p[1]));
+    const w = maxX - minX, h = maxY - minY, pad = 14, esc2 = Math.min((300 - pad * 2) / w, (150 - pad * 2) / h), ox = (300 - w * esc2) / 2 - minX * esc2, oy = (150 - h * esc2) / 2 - minY * esc2;
+    const P2 = (i, j, z = 0) => { const [x, y] = iso(i, j); return `${(x * esc2 + ox).toFixed(1)},${((y - z * 3.2) * esc2 + oy).toFixed(1)}`; };
+    let svg = '';
+    for (const p of pol) svg += `<polygon points="${P2(p.i, p.j)} ${P2(p.i + p.c, p.j)} ${P2(p.i + p.c, p.j + p.l)} ${P2(p.i, p.j + p.l)}" fill="${p.hex}" fill-opacity=".16" stroke="${p.hex}" stroke-opacity=".7" stroke-width="1"/>`;
+    for (const b of blocos.sort((a, c) => (a.i + a.j) - (c.i + c.j))) { const s = 0.7, z = b.h;
+      svg += `<polygon points="${P2(b.i, b.j + s, 0)} ${P2(b.i + s, b.j + s, 0)} ${P2(b.i + s, b.j + s, z)} ${P2(b.i, b.j + s, z)}" fill="${b.hex}" fill-opacity=".55"/>`
+        + `<polygon points="${P2(b.i + s, b.j, 0)} ${P2(b.i + s, b.j + s, 0)} ${P2(b.i + s, b.j + s, z)} ${P2(b.i + s, b.j, z)}" fill="${b.hex}" fill-opacity=".35"/>`
+        + `<polygon points="${P2(b.i, b.j, z)} ${P2(b.i + s, b.j, z)} ${P2(b.i + s, b.j + s, z)} ${P2(b.i, b.j + s, z)}" fill="${b.hex}" fill-opacity=".9"/>`; }
+    return `<svg class="mini" viewBox="0 0 300 150" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${svg}</svg>`;
+  }
+
+  function auditoriaChip(a) {
+    if (!a) return ''; if (a.estado === 'rodando') return '<span class="chip vai">revisando o código…</span>';
+    if (a.estado !== 'pronta') return ''; return a.graves ? `<span class="chip mal">${a.graves} ${a.graves === 1 ? 'problema grave' : 'problemas graves'}</span>` : `<span class="chip bem">código revisado</span>`;
+  }
+  function cartaoCidade(c) {
+    const p = provDe(c.fonte), repo = p === 'modelo' ? c.fonte.slice(7) : c.fonte.replace(/^\w+:/, ''), meu = c.dono === eu.id, repoOk = p !== 'modelo';
+    return `<article class="proj ${P.ocupadas.has(c.slug) ? 'ocupada' : ''}" data-busca="${esc((c.nome + ' ' + repo).toLowerCase())}">
+      <a href="/cidade.html?c=${c.slug}">${miniatura([c.mapa])}<div class="corpo"><h3><span>${esc(c.nome)}</span></h3>
+        <div class="origem">${glifo(p)}<span>${esc(repo)}</span></div>
+        <div class="meta"><span>${c.bairros} bairros</span><span>·</span><span>${ha(c.atualizada)}</span>${c.equipe_nome ? `<span>·</span><span>${esc(c.equipe_nome)}</span>` : ''}${auditoriaChip(c.auditoria)}</div></div></a>
+      <details class="menu"><summary aria-label="Ações de ${esc(c.nome)}">⋯</summary><div class="itens">
+        <a href="/cidade.html?c=${c.slug}">Abrir</a>${repoOk ? `<button data-regerar="${c.slug}">Regerar do repositório</button>` : ''}${repoOk && meu && p === 'github' ? `<button data-webhook="${c.slug}">Atualizar a cada push</button>` : ''}
+        ${meu ? `<button class="perigo" data-apagar="${c.slug}" data-nome="${esc(c.nome)}">Apagar</button>` : ''}</div></details></article>`;
+  }
+  function cartaoUniverso(u) {
+    const membros = P.cidades.filter(c => c.universo === u.id), provs = [...new Set(membros.map(c => provDe(c.fonte)))];
+    const graves = membros.reduce((s, c) => s + ((c.auditoria && c.auditoria.graves) || 0), 0);
+    return `<article class="proj" data-busca="${esc((u.nome + ' ' + membros.map(c => c.nome).join(' ')).toLowerCase())}">
+      <a href="/cidade.html?u=${u.slug}">${miniatura(membros.map(c => c.mapa))}<div class="corpo"><h3><span>${esc(u.nome)}</span></h3>
+        <div class="origem">${provs.map(glifo).join('')}<span>${membros.map(c => esc(c.nome)).join(' · ') || 'sem repositórios ainda'}</span></div>
+        <div class="meta"><span class="chip junto">${u.repos} projetos juntos</span>${graves ? `<span class="chip mal">${graves} graves</span>` : ''}</div></div></a>
+      <details class="menu"><summary aria-label="Ações de ${esc(u.nome)}">⋯</summary><div class="itens">
+        <a href="/cidade.html?u=${u.slug}">Abrir</a><button data-mais="${u.slug}">Adicionar repositório</button><button data-religar="${u.slug}">Redesenhar ligações</button></div></details></article>`;
+  }
+
+  function desenhar() {
+    const daFiltro = (c) => P.filtro === 'todos' || (P.filtro === 'juntos' ? false : provDe(c.fonte) === P.filtro);
+    const soltas = P.cidades.filter(c => P.filtro === 'todos' ? !c.universo : daFiltro(c)), unis = P.filtro === 'todos' || P.filtro === 'juntos' ? P.universos : [];
+    const conta = (f) => f === 'todos' ? P.cidades.filter(c => !c.universo).length + P.universos.length : f === 'juntos' ? P.universos.length : P.cidades.filter(c => provDe(c.fonte) === f).length;
+    const fs = ['todos', 'juntos', 'github', 'bitbucket', 'codecommit', 'modelo'].filter(f => f === 'todos' || conta(f));
+    $('#filtros').innerHTML = fs.map(f => `<button aria-pressed="${P.filtro === f}" data-f="${f}">${{ todos: 'Todos', juntos: 'Juntos' }[f] || PROV[f][0]}<small>${conta(f)}</small></button>`).join('');
+    $$('[data-f]').forEach(b => b.onclick = () => { P.filtro = b.dataset.f; desenhar(); });
+    $('#n-proj').textContent = conta('todos');
+    const cartoes = unis.map(cartaoUniverso).concat(soltas.map(cartaoCidade));
+    $('#grade').innerHTML = cartoes.length ? cartoes.join('') + (P.filtro === 'todos' ? '<button class="novo-card" id="novo-card"><span><i>+</i>Novo projeto</span></button>' : '')
+      : `<div class="vazio-g" style="grid-column:1/-1"><b>Nenhum projeto ainda</b><span>Conecte o GitHub, o Bitbucket ou o CodeCommit e escolha os repositórios.</span><button class="btn primario p" id="novo-vazio">Novo projeto</button></div>`;
+    filtrarBusca(); ligarAcoes();
+  }
+  function filtrarBusca() { const q = P.busca; $$('#grade .proj').forEach(el => { el.hidden = !!q && !el.dataset.busca.includes(q); }); }
+  $('#busca').oninput = (e) => { P.busca = e.target.value.trim().toLowerCase(); filtrarBusca(); };
+
+  function ligarAcoes() {
+    for (const id of ['novo-card', 'novo-vazio']) { const b = document.getElementById(id); if (b) b.onclick = abrirNovo; }
+    $$('[data-regerar]').forEach(b => b.onclick = async () => { const slug = b.dataset.regerar; b.closest('details').open = false; P.ocupadas.add(slug); desenhar(); avisar('Lendo o repositório de novo…');
+      try { const m = await api('POST', `/api/cidades/${slug}/regerar`, {}); const n = m.bairrosNovos.length + m.prediosNovos.length + m.bairrosSairam.length + m.prediosSairam.length; avisar(n ? `Cidade regerada: ${n} mudança(s).` : 'Cidade regerada: nada mudou.'); }
+      catch (e) { avisar(e.message); } P.ocupadas.delete(slug); carregar(); });
+    $$('[data-webhook]').forEach(b => b.onclick = async () => { b.closest('details').open = false; const w = await api('GET', `/api/cidades/${b.dataset.webhook}/webhook`);
+      $('#webhook').innerHTML = `<p style="margin:0;color:var(--tinta-2);font-size:14px">No repositório: <b style="color:var(--tinta)">Settings → Webhooks → Add webhook</b>.</p>
+        <label class="campo-l">Payload URL<input readonly value="${esc(w.url)}" onclick="this.select()"></label><label class="campo-l">Content type<input readonly value="application/json"></label>
+        <label class="campo-l">Secret<input readonly value="${esc(w.segredo)}" onclick="this.select()"></label><p style="margin:0;color:var(--tinta-2);font-size:13px">Evento: só push. A cada push na branch principal a cidade é regerada.</p>`;
+      $('#d-webhook').showModal(); });
+    $$('[data-apagar]').forEach(b => b.onclick = async () => { b.closest('details').open = false; if (!confirm(`Apagar ${b.dataset.nome}?`)) return; await api('DELETE', `/api/cidades/${b.dataset.apagar}`); avisar('Projeto apagado.'); carregar(); });
+    $$('[data-mais]').forEach(b => b.onclick = () => { b.closest('details').open = false; abrirNovo(b.dataset.mais); });
+    $$('[data-religar]').forEach(b => b.onclick = async () => { b.closest('details').open = false; avisar('Redesenhando as ligações…'); try { const r = await api('POST', `/api/universos/${b.dataset.religar}/religar`, {}); avisar(`${r.length ?? (r.ligacoes || []).length} ligação(ões) entre os projetos.`); } catch (e) { avisar(e.message); } });
+  }
+  document.addEventListener('click', (e) => { for (const d of $$('details.menu[open]')) if (!d.contains(e.target)) d.open = false; });
+
+  async function carregar() {
+    const [{ cidades, modelos }, universos] = await Promise.all([api('GET', '/api/cidades'), api('GET', '/api/universos').catch(() => [])]);
+    Object.assign(P, { cidades, modelos, universos }); desenhar(); $('#painel').setAttribute('aria-busy', 'false');
+    if (cidades.some(c => c.auditoria && c.auditoria.estado === 'rodando')) setTimeout(carregar, 8000);
+  }
+
+  // ---------- contas ----------
+  const DICA = { github: 'Settings → Developer settings → Personal access tokens. Leitura de conteúdo; escrita se for usar o agente.', bitbucket: 'Atlassian → Segurança → API tokens, com leitura de repositórios.', codecommit: 'Usuário IAM só com leitura: codecommit:List*, Get*, BatchGet*.' };
+  let CONEXOES = [];
+  async function desenharContas() {
+    const { conexoes, githubOauth } = await api('GET', '/api/conexoes'); CONEXOES = conexoes;
+    $('#pontos').innerHTML = conexoes.map(c => `<i class="${c.conectado ? 'on' : ''}" title="${esc(c.nome)}"></i>`).join('');
+    $('#contas').innerHTML = conexoes.map(c => `<div class="conta" data-p="${c.id}"><div class="conta-cab">${glifo(c.id)}<b>${esc(c.nome)}</b>${c.conectado ? `<span class="ok">● ${esc(c.conta || 'conectado')}</span>` : '<span>não conectado</span>'}<span class="esp"></span>
+        ${c.conectado ? `<button class="btn fantasma p" data-tirar="${c.id}">Desconectar</button>` : `${c.id === 'github' && githubOauth ? '<a class="btn primario p" href="/conectar/github">Entrar com GitHub</a>' : ''}<button class="btn p" data-abrir="${c.id}">${c.id === 'github' && githubOauth ? 'Token' : 'Conectar'}</button>`}</div>
+      <form hidden autocomplete="off">${c.campos.map(f => `<label class="campo-l"><span class="so-leitor">${esc(f.rotulo)}</span><input name="${f.k}" type="${f.tipo}" placeholder="${esc(f.rotulo)}" spellcheck="false"></label>`).join('')}
+        <p class="dica">${DICA[c.id]}</p><div><button class="btn primario p">Conectar</button></div><p class="erro" role="alert"></p></form></div>`).join('');
+    $$('[data-abrir]').forEach(b => b.onclick = () => { const f = $(`[data-p="${b.dataset.abrir}"] form`); f.hidden = !f.hidden; if (!f.hidden) $('input', f).focus(); });
+    $$('[data-tirar]').forEach(b => b.onclick = async () => { await api('DELETE', `/api/conexoes/${b.dataset.tirar}`); avisar(`${PROV[b.dataset.tirar][0]} desconectado.`); desenharContas(); R.carregado = false; });
+    $$('#contas form').forEach(f => f.onsubmit = async (ev) => { ev.preventDefault(); const p = f.closest('[data-p]').dataset.p, bt = $('button', f); bt.disabled = true; bt.textContent = 'Conferindo…';
+      try { await api('PUT', `/api/conexoes/${p}`, Object.fromEntries(new FormData(f))); avisar(`${PROV[p][0]} conectado.`); R.carregado = false; desenharContas(); }
+      catch (e) { $('.erro', f).textContent = e.message; bt.disabled = false; bt.textContent = 'Conectar'; } });
+  }
+  $('#b-contas').onclick = () => { $('#d-contas').showModal(); };
+
+  // ---------- novo projeto ----------
+  const R = { todos: [], erros: [], escolhidos: new Map(), carregado: false, universo: null };
+  async function abrirNovo(universo = null) {
+    R.universo = typeof universo === 'string' ? universo : null; R.escolhidos.clear(); $('#erro-novo').textContent = ''; $('#n-nome').value = '';
+    $('#t-novo').textContent = R.universo ? 'Adicionar ao projeto' : 'Novo projeto'; $('.abas').hidden = !!R.universo; aba('repos');
+    $('#d-novo').showModal(); desenharEscolhidos();
+    if (!R.carregado) { $('#repos').innerHTML = '<div class="sem-conta"><div class="progresso ativo"><i></i>Buscando seus repositórios…</div></div>';
+      try { const r = await api('GET', '/api/conexoes/repos'); R.todos = r.repos; R.erros = r.erros; R.carregado = true; } catch (e) { R.todos = []; R.erros = [{ provedor: '', erro: e.message }]; } }
+    desenharRepos(); $('#busca-repo').focus();
+  }
+  function aba(qual) { $$('[data-aba]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.aba === qual))); $$('[data-painel]').forEach(p => { p.hidden = p.dataset.painel !== qual; }); $('[data-pe="repos"]').hidden = qual !== 'repos'; }
+  $$('[data-aba]').forEach(b => b.onclick = () => aba(b.dataset.aba));
+  function desenharRepos() {
+    const q = $('#busca-repo').value.trim().toLowerCase(), lista = R.todos.filter(r => !q || r.repo.toLowerCase().includes(q) || (r.descricao || '').toLowerCase().includes(q)).slice(0, 100);
+    if (!R.todos.length && !CONEXOES.some(c => c.conectado)) { $('#repos').innerHTML = `<div class="sem-conta"><span>Nenhuma conta conectada.</span><button class="btn primario p" id="ir-contas" type="button">Conectar uma conta</button></div>`; $('#ir-contas').onclick = () => { $('#d-novo').close(); $('#d-contas').showModal(); }; return; }
+    $('#repos').innerHTML = R.erros.map(e => `<p class="erro" style="padding:8px 12px">${esc((PROV[e.provedor] || [''])[0])}: ${esc(e.erro)}</p>`).join('') + (lista.length ? lista.map(r => `<label class="repo"><input type="checkbox" value="${esc(r.fonte)}" ${R.escolhidos.has(r.fonte) ? 'checked' : ''}>${glifo(r.provedor)}
+        <span><b style="font-weight:500">${esc(r.repo)}${r.privado ? '<i class="priv">privado</i>' : ''}</b>${r.descricao ? `<small>${esc(r.descricao)}</small>` : ''}</span>${r.atualizado ? `<time>${ha(r.atualizado)}</time>` : ''}</label>`).join('')
+      : `<div class="sem-conta">${q ? 'Nada com esse nome.' : 'Nenhum repositório nas contas conectadas.'}</div>`);
+    $$('#repos input').forEach(c => c.onchange = () => { if (c.checked) R.escolhidos.set(c.value, true); else R.escolhidos.delete(c.value); desenharEscolhidos(); });
+  }
+  function desenharEscolhidos() {
+    const n = R.escolhidos.size, b = $('#b-gerar'); b.disabled = !n;
+    b.textContent = R.universo ? (n > 1 ? `Adicionar ${n}` : 'Adicionar') : n > 1 ? `Juntar ${n} numa cidade` : 'Criar';
+    $('#dica-novo').textContent = R.universo ? 'Cada repositório vira uma região do projeto.' : n > 1 ? 'Cada repositório vira uma região; o Claude liga um ao outro.' : 'Marque vários para juntar numa cidade só.';
+    $('#escolhidos').innerHTML = [...R.escolhidos.keys()].map(f => `<span>${esc(f.replace(/^\w+:/, ''))}<button type="button" data-tira="${esc(f)}" aria-label="Tirar">×</button></span>`).join('');
+    $$('[data-tira]').forEach(x => x.onclick = () => { R.escolhidos.delete(x.dataset.tira); desenharRepos(); desenharEscolhidos(); });
+  }
+  $('#busca-repo').oninput = desenharRepos;
+  $('#add-manual').onclick = () => { let v = $('#repo-manual').value.trim(); if (!v) return;
+    if (!/^(github|bitbucket|codecommit):/.test(v)) v = /bitbucket\.org/.test(v) ? 'bitbucket:' + v.replace(/^https?:\/\/bitbucket\.org\//, '').split('/').slice(0, 2).join('/') : 'github:' + v.replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '').split('/').slice(0, 2).join('/');
+    R.escolhidos.set(v, true); $('#repo-manual').value = ''; desenharEscolhidos(); };
+  const progresso = (txt) => { $('#progresso').classList.toggle('ativo', !!txt); $('#progresso-txt').textContent = txt || ''; };
+  async function adicionarRepos(slug, fontes) { const falhas = [];
+    for (const [i, f] of fontes.entries()) { progresso(`Gerando ${f.replace(/^\w+:/, '')} (${i + 1}/${fontes.length})… leva de 1 a 3 minutos cada.`);
+      try { await api('POST', `/api/universos/${slug}/repos`, { fonte: f }); } catch (e) { falhas.push(`${f.replace(/^\w+:/, '')}: ${e.message}`); } }
+    return falhas; }
+  $('#b-gerar').onclick = async () => { const fontes = [...R.escolhidos.keys()], btn = $('#b-gerar'); if (!fontes.length) return; btn.disabled = true; $('#erro-novo').textContent = '';
+    try {
+      let destino;
+      if (R.universo) { const f = await adicionarRepos(R.universo, fontes); if (f.length) throw new Error(f.join('\n')); destino = `/cidade.html?u=${R.universo}`; }
+      else if (fontes.length === 1) { progresso('Lendo o repositório e desenhando a cidade… leva de 1 a 3 minutos.');
+        const c = await api('POST', '/api/cidades/github', { fonte: fontes[0], nome: $('#n-nome').value, equipe: $('#n-equipe').value || null }); destino = `/cidade.html?c=${c.slug}`; }
+      else { const un = await api('POST', '/api/universos', { nome: $('#n-nome').value || 'Meus projetos', equipe: $('#n-equipe').value || null });
+        const f = await adicionarRepos(un.slug, fontes); if (f.length === fontes.length) throw new Error(f.join('\n')); if (f.length) avisar(`Não deu para gerar: ${f.join('; ')}`); destino = `/cidade.html?u=${un.slug}`; }
+      progresso(''); $('#d-novo').close(); await carregar(); avisar('Projeto pronto. Os agentes já estão revisando o código.');
+      setTimeout(() => location.assign(destino), 900);
+    } catch (e) { progresso(''); $('#erro-novo').textContent = e.message; btn.disabled = false; } };
+  $('#b-novo').onclick = () => abrirNovo();
+  $$('[data-fecha]').forEach(b => b.onclick = () => b.closest('dialog').close());
+
+  const equipes = await api('GET', '/api/equipes').catch(() => []);
+  $('#n-equipe').innerHTML += equipes.map(e => `<option value="${e.id}">${esc(e.nome)}</option>`).join('');
+  await carregar(); desenharContas();
+  $('#modelos').innerHTML = P.modelos.map(m => `<button class="modelo" data-modelo="${m.id}"><b>${esc(m.titulo)}</b><small>${esc(m.resumo)}</small><em>${m.bairros} bairros</em></button>`).join('');
+  $$('[data-modelo]').forEach(b => b.onclick = async () => { b.disabled = true; try { const c = await api('POST', '/api/cidades/modelo', { modelo: b.dataset.modelo, equipe: $('#n-equipe').value || null }); location.assign(`/cidade.html?c=${c.slug}`); } catch (e) { avisar(e.message); b.disabled = false; } });
+  { const qs = new URLSearchParams(location.search); if (qs.get('conectado')) { avisar('GitHub conectado.'); $('#d-contas').showModal(); } if (qs.get('erro')) avisar(qs.get('erro')); if (qs.has('novo')) abrirNovo(); }
+})();
+</script>
+</body>
+</html>

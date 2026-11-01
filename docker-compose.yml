@@ -1,0 +1,18 @@
+# SystemCity num container só: servidor, site e banco (SQLite num volume).
+#   cp .env.example .env && docker compose up -d     →  http://localhost:3000
+services:
+  systemcity:
+    build: .
+    image: systemcity
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORTA: "3000"
+      HTTPS: "0"
+    ports:
+      - "3000:3000"
+    volumes:
+      - dados:/app/servidor/dados
+
+volumes:
+  dados:

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Custos de IA · SystemCity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=Red+Hat+Display:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site/estilo.css">
+<style>
+  main { padding: 32px 0 64px; display: grid; gap: 16px; }
+  h1 { font-size: 28px; font-weight: 800; margin: 0; } h2 { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-2); margin: 0 0 12px; font-family: var(--mono, monospace); }
+  .cab { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; } .cab .esp { flex: 1; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .kpi { padding: 16px; } .kpi b { display: block; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; } .kpi span { color: var(--tinta-2); font-size: 13px; }
+  .cartao { padding: 18px; } table { width: 100%; border-collapse: collapse; font-size: 14px; } th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--linha); }
+  th { color: var(--tinta-2); font-weight: 500; font-size: 12.5px; } td.n { text-align: right; font-variant-numeric: tabular-nums; } th.n { text-align: right; }
+  .barras { display: flex; align-items: flex-end; gap: 3px; height: 140px; } .barras i { flex: 1; background: #37e6ff; border-radius: 3px 3px 0 0; min-height: 2px; position: relative; }
+  .barras i:hover::after { content: attr(data-t); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); white-space: nowrap; background: #0b1220; border: 1px solid var(--linha); padding: 3px 6px; border-radius: 6px; font-size: 12px; font-style: normal; }
+  .grade { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; } @media (max-width: 760px) { .grade { grid-template-columns: 1fr; } }
+  .tab { overflow-x: auto; } select { background: rgba(4,9,18,.7); color: var(--tinta); border: 1px solid var(--linha-forte); border-radius: 8px; padding: 6px 8px; }
+  .alto { color: #ff8a3c; }
+</style>
+</head>
+<body>
+<div class="fundo" aria-hidden="true"></div>
+<header class="nav"><div class="envelope"><a class="marca" href="/"><span>System<b>City</b></span></a></div></header>
+<main class="envelope" id="painel">
+  <div class="cab"><h1>Custos de IA</h1><span class="esp"></span><label>Período <select id="dias"><option value="7">7 dias</option><option value="30" selected>30 dias</option><option value="90">90 dias</option></select></label></div>
+  <p id="aviso" style="color:var(--tinta-2);margin:0"></p>
+  <div class="kpis" id="kpis"></div>
+  <div class="cartao"><h2>Por dia (US$)</h2><div class="barras" id="dias-g"></div></div>
+  <div class="grade"><div class="cartao tab"><h2>Por tipo de trabalho</h2><div id="tipos"></div></div><div class="cartao tab"><h2>Assinaturas (Kiwify)</h2><div id="assin"></div></div></div>
+  <div class="cartao tab"><h2>Por pessoa</h2><div id="pessoas"></div></div>
+</main>
+<script src="site/sessao.js"></script>
+<script>
+(async () => {
+  const { api, esc } = SC, $ = (s) => document.querySelector(s), DOLAR = Number(new URLSearchParams(location.search).get('dolar')) || 5.6;   // câmbio para mostrar em reais
+  const usd = (v) => `US$ ${(v || 0).toFixed(v < 1 ? 3 : 2)}`, brl = (v) => (v * DOLAR).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const NOMES = { cidade: 'Gerar cidade', auditoria: 'Auditoria', universo: 'Juntar projetos', ata: 'Atas', pergunta: 'Perguntas', incidente: 'Incidentes', agente: 'Agente de código', outro: 'Outros' };
+  async function carregar() {
+    let r; try { r = await api('GET', `/api/admin/custos?dias=${$('#dias').value}`); } catch (e) { $('#painel').innerHTML = `<p>${esc(e.message)}</p>`; return; }
+    const ativos = r.assinaturas.filter(a => a.ate > Date.now()).length, receita = ativos * 29.9, custoBrl = r.total.custo * DOLAR;
+    $('#aviso').textContent = `Valores em dólar convertidos a R$ ${DOLAR.toFixed(2)} (mude com ?dolar=). Receita estimada: assinaturas ativas × R$ 29,90.`;
+    $('#kpis').innerHTML = [[usd(r.total.custo), `custo de IA · ${brl(r.total.custo)}`], [r.total.chamadas, 'chamadas ao Claude'], [`${(r.total.entrada / 1e6).toFixed(2)}M / ${(r.total.saida / 1e6).toFixed(2)}M`, 'tokens de entrada / saída'],
+      [ativos, 'assinaturas Pro ativas'], [`R$ ${(receita - custoBrl).toFixed(2).replace('.', ',')}`, 'receita − custo de IA no período'], [r.falhas, 'chamadas que falharam']].map(([v, t]) => `<div class="cartao kpi"><b>${esc(v)}</b><span>${esc(t)}</span></div>`).join('');
+    const max = Math.max(0.0001, ...r.porDia.map(d => d.custo));
+    $('#dias-g').innerHTML = r.porDia.length ? r.porDia.map(d => `<i style="height:${Math.max(2, d.custo / max * 100)}%" data-t="${d.dia.slice(5)}: ${usd(d.custo)} · ${d.chamadas} chamadas"></i>`).join('') : '<p style="color:var(--tinta-2)">Sem uso no período.</p>';
+    $('#tipos').innerHTML = `<table><tr><th>Tipo</th><th class="n">Chamadas</th><th class="n">Custo</th><th class="n">Médio</th></tr>${r.porTipo.map(t => `<tr><td>${esc(NOMES[t.tipo] || t.tipo)}</td><td class="n">${t.chamadas}</td><td class="n">${usd(t.custo)}</td><td class="n">${usd(t.medio)}</td></tr>`).join('')}</table>`;
+    $('#pessoas').innerHTML = `<table><tr><th>Pessoa</th><th>E-mail</th><th class="n">Chamadas</th><th class="n">Custo</th><th class="n">Em reais</th><th>Último uso</th></tr>${r.porPessoa.map(p => `<tr><td>${esc(p.nome || '(sem conta / automático)')}</td><td>${esc(p.email || '')}</td><td class="n">${p.chamadas}</td><td class="n ${p.custo * DOLAR > 29.9 ? 'alto' : ''}">${usd(p.custo)}</td><td class="n">${brl(p.custo)}</td><td>${new Date(p.ultimo).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td></tr>`).join('')}</table>`;
+    $('#assin').innerHTML = r.assinaturas.length ? `<table><tr><th>E-mail</th><th>Status</th><th>Vale até</th></tr>${r.assinaturas.map(a => `<tr><td>${esc(a.email)}${a.nome ? '' : ' <small>(sem conta ainda)</small>'}</td><td>${esc(a.status)}</td><td>${new Date(a.ate).toLocaleDateString('pt-BR')}</td></tr>`).join('')}</table>` : '<p style="color:var(--tinta-2)">Nenhuma assinatura ainda.</p>';
+  }
+  $('#dias').onchange = carregar; carregar();
+})();
+</script>
+</body>
+</html>

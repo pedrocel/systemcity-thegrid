@@ -1,0 +1,19 @@
+{
+  "name": "systemcity-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Liga servidores MCP, APIs e webhooks à cidade: tudo vira eventos num stream SSE.",
+  "type": "module",
+  "main": "servidor.mjs",
+  "scripts": {
+    "start": "node servidor.mjs",
+    "demo": "node servidor.mjs config.exemplo.json"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "3.25.76"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

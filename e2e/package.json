@@ -1,0 +1,8 @@
+{
+  "name": "systemcity-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Testes de navegador: sobem o servidor com um banco novo e usam o site como uma pessoa.",
+  "scripts": { "test": "playwright test" },
+  "devDependencies": { "@playwright/test": "1.64.1" }
+}

@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Equipes · SystemCity</title>
+<meta name="description" content="Crie equipes e adicione pessoas pelo nick.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=Red+Hat+Display:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site/estilo.css">
+<style>
+  .painel { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 24px; padding: 32px 0 60px; align-items: start; }
+  .lateral { display: grid; gap: 16px; position: sticky; top: 88px; }
+  .lateral h2, .principal h2 { font-size: 13px; font-family: var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-2); font-weight: 600; margin-bottom: 12px; }
+  .equipe-btn { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; border-radius: 11px; background: none; border: 1px solid transparent; color: var(--tinta); font: 15px var(--texto); text-align: left; cursor: pointer; }
+  .equipe-btn:hover { background: rgba(16, 28, 48, .6); }
+  .equipe-btn:focus-visible { outline: 2px solid var(--neon); }
+  .equipe-btn[aria-current="true"] { background: var(--vidro-2); border-color: var(--linha-forte); }
+  .equipe-btn .avatar { border-radius: 10px; }
+  .equipe-btn span { flex: 1; min-width: 0; }
+  .equipe-btn small { display: block; color: var(--tinta-3); font-size: 12.5px; }
+  .vazio { color: var(--tinta-2); font-size: 14px; }
+  .nova { display: flex; gap: 8px; margin-top: 8px; }
+  .nova input { flex: 1; min-width: 0; }
+  #tickets .pilha { display: grid; gap: 8px; } #tickets .seg-tk { display: flex; gap: 14px; } #tickets .nota { color: var(--tinta-2, #9fb0c8); font-size: 14px; }
+  .eu-card { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 18px; }
+  .eu-card .btn { padding: 6px 10px; font-size: 13px; }
+  .eu-card span { flex: 1; min-width: 120px; }
+  .eu-card small { display: block; color: var(--tinta-2); font-family: var(--mono); font-size: 12.5px; }
+  .cabeca { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+  .cabeca h1 { font-size: clamp(26px, 3.4vw, 38px); font-weight: 800; flex: 1; min-width: 200px; }
+  .cabeca h1 input { font: inherit; color: inherit; background: none; border: 1px dashed transparent; border-radius: 8px; padding: 0 6px; margin-left: -7px; width: 100%; }
+  .cabeca h1 input:hover { border-color: var(--linha-forte); }
+  .cabeca h1 input:focus-visible { outline: none; border-color: var(--neon); }
+  .acoes-equipe { display: flex; gap: 8px; flex-wrap: wrap; }
+  .grade-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .adicionar { position: relative; }
+  .sugestoes { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 5; background: var(--vidro-2); border: 1px solid var(--linha-forte); border-radius: 12px; padding: 6px; box-shadow: 0 20px 50px rgba(0, 0, 0, .5); }
+  .sugestoes button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px; border: 0; background: none; color: var(--tinta); font: 14px var(--texto); border-radius: 8px; cursor: pointer; text-align: left; }
+  .sugestoes button[aria-selected="true"], .sugestoes button:hover { background: rgba(55, 230, 255, .1); }
+  .sugestoes small { color: var(--tinta-2); font-family: var(--mono); }
+  .sugestoes .avatar { width: 28px; height: 28px; font-size: 11px; }
+  .linha-add { display: flex; gap: 8px; }
+  .linha-add .campo { flex: 1; }
+  .membro { display: flex; align-items: center; gap: 8px 12px; padding: 12px 0; border-bottom: 1px solid var(--linha); flex-wrap: wrap; }
+  .membro:last-child { border-bottom: 0; }
+  .membro span { flex: 1; min-width: 150px; }
+  .membro small { display: block; color: var(--tinta-2); font-family: var(--mono); font-size: 12.5px; }
+  .membro .btn { padding: 6px 10px; font-size: 12.5px; }
+  .membro .menu { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
+  .membro .menu:empty { display: none; }
+  .atalho { display: flex; gap: 14px; align-items: center; padding: 16px; border-radius: 12px; border: 1px solid var(--linha); text-decoration: none; color: var(--tinta); transition: border-color .15s, background .15s; }
+  .atalho:hover { border-color: var(--neon); background: rgba(55, 230, 255, .05); }
+  .atalho i { font-style: normal; font-size: 22px; width: 42px; height: 42px; border-radius: 11px; display: grid; place-items: center; background: rgba(55, 230, 255, .1); }
+  .atalho small { display: block; color: var(--tinta-2); font-size: 13px; }
+  .atalhos { display: grid; gap: 10px; }
+  .boas-vindas { text-align: center; padding: 60px 24px; }
+  .boas-vindas h1 { font-size: clamp(28px, 4vw, 42px); font-weight: 800; margin-bottom: 12px; }
+  .boas-vindas p { color: var(--tinta-2); max-width: 48ch; margin: 0 auto 24px; }
+  .boas-vindas form { display: flex; gap: 10px; max-width: 460px; margin: 0 auto; }
+  .boas-vindas .campo { flex: 1; text-align: left; }
+  @media (max-width: 900px) { .painel { grid-template-columns: 1fr; } .lateral { position: static; } .grade-2 { grid-template-columns: 1fr; } }
+  @media (max-width: 520px) { .boas-vindas form, .linha-add { flex-direction: column; } .membro { flex-wrap: wrap; } .membro .menu { width: 100%; justify-content: flex-start; } }
+</style>
+</head>
+<body>
+<div class="fundo" aria-hidden="true"></div>
+<header class="nav"><div class="envelope">
+  <a class="marca" href="/"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="14" width="7" height="15" rx="1.5" fill="none" stroke="#37e6ff" stroke-width="2"/><rect x="12.5" y="4" width="7" height="25" rx="1.5" fill="none" stroke="#37e6ff" stroke-width="2"/><rect x="22" y="10" width="7" height="19" rx="1.5" fill="none" stroke="#a78bfa" stroke-width="2"/></svg><span>System<b>City</b></span></a>
+  <nav class="nav-links" aria-label="Principal"><a href="/cidades.html">Cidades</a><a href="/equipes.html" aria-current="page" style="color:var(--tinta)">Equipes</a><a href="/cidade.html">Exemplo</a><a href="/cidade.html#grid">The Grid</a></nav>
+  <div class="nav-acoes"><a class="btn primario" href="/cidade.html">Abrir a cidade</a></div>
+</div></header>
+
+<main class="envelope painel" id="painel" aria-busy="true">
+  <aside class="lateral">
+    <div class="cartao eu-card" id="eu-card"></div>
+    <div class="cartao">
+      <h2>Suas equipes</h2>
+      <div id="lista-equipes"></div>
+      <form class="nova" id="f-nova"><label class="campo" style="flex:1"><span class="so-leitor">Nome da nova equipe</span><input name="nome" placeholder="Nova equipe" maxlength="60" required></label><button class="btn">Criar</button></form>
+    </div>
+  </aside>
+  <section class="principal" id="principal"></section>
+</main>
+
+<dialog id="d-perfil" class="cartao" style="color:var(--tinta);width:min(420px,calc(100vw - 32px))">
+  <form method="dialog" id="f-perfil" style="display:grid;gap:14px">
+    <h2 style="font-size:20px">Seu perfil</h2>
+    <label class="campo">Nome<input name="nome" maxlength="60" required></label>
+    <label class="campo prefixo">Nick<input name="nick" maxlength="20" required spellcheck="false" autocapitalize="off"></label>
+    <p class="erro" role="alert"></p>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn fantasma" value="cancelar" formnovalidate>Cancelar</button><button class="btn primario" value="salvar">Salvar</button></div>
+  </form>
+</dialog>
+<style>dialog::backdrop { background: rgba(2, 5, 11, .7); backdrop-filter: blur(4px); } dialog { border: 1px solid var(--linha-forte); }</style>
+
+<script src="site/sessao.js"></script>
+<script>
+(async () => {
+  const { api, cor, iniciais, esc, avisar } = SC, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const eu = await SC.eu();
+  if (eu === null) return location.replace('/entrar.html?volta=' + encodeURIComponent(location.pathname + location.hash));
+  if (eu === undefined) { $('#painel').innerHTML = '<p class="vazio">Esta página precisa do servidor do SystemCity ligado (<code>cd servidor && npm start</code>).</p>'; return; }
+  const S = { eu, equipes: [], aberta: null, detalhe: null };
+  const papelTxt = { dono: 'dono', admin: 'admin', membro: 'membro' };
+
+  function desenharEu() {
+    $('#eu-card').innerHTML = `<i class="avatar" style="--c:${cor(S.eu.id)}">${esc(iniciais(S.eu.nome))}</i><span>${esc(S.eu.nome)}<small>@${esc(S.eu.nick)}</small></span>
+      <button class="btn fantasma" id="b-perfil" aria-label="Editar perfil">Editar</button><button class="btn fantasma" id="b-sair">Sair</button>`;
+    $('#b-sair').onclick = async () => { await api('POST', '/api/sair').catch(() => {}); location.assign('/'); };
+    $('#b-perfil').onclick = () => { const f = $('#f-perfil'); f.nome.value = S.eu.nome; f.nick.value = S.eu.nick; $('.erro', f).textContent = ''; $('#d-perfil').showModal(); };
+  }
+  $('#f-perfil').addEventListener('submit', async (ev) => { if (ev.submitter && ev.submitter.value === 'cancelar') return; ev.preventDefault(); const f = ev.target;
+    try { S.eu = await api('PATCH', '/api/eu', { nome: f.nome.value, nick: f.nick.value }); $('#d-perfil').close(); desenharEu(); if (S.aberta) abrir(S.aberta); avisar('Perfil salvo.'); }
+    catch (e) { $('.erro', f).textContent = e.message; } });
+
+  async function carregar(abrirId) {
+    S.equipes = await api('GET', '/api/equipes'); desenharLista();
+    const alvo = abrirId ?? (S.equipes.some(e => e.id === S.aberta) ? S.aberta : (S.equipes[0] || {}).id);
+    if (alvo) await abrir(alvo); else desenharBoasVindas();
+    $('#painel').setAttribute('aria-busy', 'false');
+  }
+  function desenharLista() {
+    $('#lista-equipes').innerHTML = S.equipes.length ? S.equipes.map(e => `<button class="equipe-btn" data-e="${e.id}" aria-current="${e.id === S.aberta}"><i class="avatar" style="--c:${cor(e.id + 3)}">${esc(iniciais(e.nome))}</i><span>${esc(e.nome)}<small>${e.n} pessoa${e.n > 1 ? 's' : ''} · ${papelTxt[e.papel]}</small></span></button>`).join('')
+      : '<p class="vazio">Nenhuma equipe ainda.</p>';
+    $$('[data-e]', $('#lista-equipes')).forEach(b => b.onclick = () => abrir(+b.dataset.e));
+  }
+  function desenharBoasVindas() {
+    $('#principal').innerHTML = `<div class="cartao boas-vindas"><h1>Crie sua primeira equipe</h1><p>Uma equipe junta as pessoas com quem você trabalha: conversa própria, chamadas, atas e corridas no The Grid.</p>
+      <form id="f-primeira"><label class="campo"><span class="so-leitor">Nome da equipe</span><input name="nome" placeholder="Ex.: Time de Plataforma" maxlength="60" required></label><button class="btn primario grande">Criar equipe</button></form><p class="erro" role="alert"></p></div>`;
+    $('#f-primeira').addEventListener('submit', (ev) => { ev.preventDefault(); criar(ev.target.nome.value, $('#principal .erro')); }); $('#f-primeira').nome.focus();
+  }
+  async function criar(nome, erro) { try { const e = await api('POST', '/api/equipes', { nome }); avisar(`Equipe ${e.nome} criada.`); await carregar(e.id); } catch (e) { if (erro) erro.textContent = e.message; else avisar(e.message); } }
+  $('#f-nova').addEventListener('submit', (ev) => { ev.preventDefault(); const n = ev.target.nome.value; ev.target.reset(); criar(n); });
+
+  // sistema de tickets da equipe: as atividades das atas viram ticket com um clique
+  const CAMPOS_TK = { github: [['repo', 'Repositório (dono/repo)'], ['token', 'Token com permissão de issues', 'password'], ['rotulo', 'Rótulo (opcional)']],
+    jira: [['site', 'Site (https://suaempresa.atlassian.net)'], ['email', 'E-mail da conta'], ['token', 'API token', 'password'], ['projeto', 'Chave do projeto (ex.: PAG)'], ['tipo', 'Tipo (padrão: Task)']],
+    linear: [['token', 'API key', 'password'], ['time', 'Chave do time (ex.: ENG)']] };
+  async function desenharTickets(id) {
+    const el = $('#tickets'), atual = await api('GET', `/api/equipes/${id}/tickets`).catch(() => null);
+    const campos = (t) => (CAMPOS_TK[t] || []).map(([k, r, tipo]) => `<label class="campo"><span class="so-leitor">${r}</span><input name="${k}" placeholder="${r}" type="${tipo || 'text'}" autocomplete="off" spellcheck="false"></label>`).join('');
+    el.innerHTML = `<h2>Tickets</h2><p class="nota">${atual ? `Ligado ao ${{ github: 'GitHub Issues', jira: 'Jira', linear: 'Linear' }[atual.tipo]}: <b>${esc(atual.alvo)}</b>. As atividades das atas viram ticket com um clique.` : 'Ligue o sistema de tickets da equipe e as atividades das atas viram ticket com um clique.'}</p>
+      <form id="f-tk" class="pilha" autocomplete="off"><div class="seg-tk">${['github', 'jira', 'linear'].map(t => `<label><input type="radio" name="tipo" value="${t}" ${(atual ? atual.tipo : 'github') === t ? 'checked' : ''}> ${{ github: 'GitHub', jira: 'Jira', linear: 'Linear' }[t]}</label>`).join('')}</div>
+        <div id="tk-campos"></div><div class="linha-add"><button class="btn primario">${atual ? 'Trocar' : 'Ligar'}</button>${atual ? '<button type="button" class="btn fantasma perigo" id="tk-desligar">Desligar</button>' : ''}</div><p class="erro" role="alert"></p></form>`;
+    const f = $('#f-tk'), mostrar = () => { $('#tk-campos').innerHTML = campos(f.tipo.value); }; mostrar(); f.onchange = (e) => { if (e.target.name === 'tipo') mostrar(); };
+    f.onsubmit = async (e) => { e.preventDefault(); const dados = Object.fromEntries(new FormData(f));
+      try { await api('PUT', `/api/equipes/${id}/tickets`, dados); avisar('Sistema de tickets ligado.'); desenharTickets(id); } catch (er) { $('.erro', f).textContent = er.message; } };
+    const d = $('#tk-desligar'); if (d) d.onclick = async () => { await api('PUT', `/api/equipes/${id}/tickets`, {}); avisar('Sistema de tickets desligado.'); desenharTickets(id); };
+  }
+  async function abrir(id) {
+    S.aberta = id; desenharLista();
+    try { S.detalhe = await api('GET', `/api/equipes/${id}`); } catch (e) { avisar(e.message); return carregar(null); }
+    const d = S.detalhe, manda = d.meuPapel === 'dono' || d.meuPapel === 'admin';
+    $('#principal').innerHTML = `
+      <div class="cabeca"><h1>${manda ? `<label><span class="so-leitor">Nome da equipe</span><input id="nome-eq" value="${esc(d.nome)}" maxlength="60"></label>` : esc(d.nome)}</h1>
+        <div class="acoes-equipe">${d.meuPapel === 'dono' ? '<button class="btn fantasma perigo" id="b-apagar">Apagar equipe</button>' : '<button class="btn fantasma perigo" id="b-sair-eq">Sair da equipe</button>'}</div></div>
+      <div class="grade-2">
+        <div class="cartao">
+          <h2>Pessoas (${d.membros.length})</h2>
+          ${manda ? `<div class="adicionar"><form class="linha-add" id="f-add" autocomplete="off"><label class="campo prefixo"><span class="so-leitor">Nick de quem entra</span><input name="nick" placeholder="nick da pessoa" role="combobox" aria-expanded="false" aria-controls="sugestoes" aria-autocomplete="list" spellcheck="false" autocapitalize="off" required></label><button class="btn primario">Adicionar</button></form>
+            <div class="sugestoes" id="sugestoes" role="listbox" hidden></div><p class="erro" role="alert"></p></div>` : ''}
+          <div id="membros">${d.membros.map(m => membro(m, d)).join('')}</div>
+        </div>
+        <div class="atalhos">
+          <a class="atalho" href="/cidade.html?sala=${d.sala}"><i>💬</i><span><b>Conversa da equipe</b><small>Chat de todos que estão na equipe</small></span></a>
+          <a class="atalho" href="/cidade.html?chamada=${d.sala}"><i>📞</i><span><b>Chamada da equipe</b><small>Voz e vídeo, com transcrição e ata pelo Claude</small></span></a>
+          <a class="atalho" href="/cidade.html#grid"><i>🏁</i><span><b>Daily no The Grid</b><small>Crie uma corrida e chame o time</small></span></a>
+          <a class="atalho" href="/cidades.html"><i>🏙</i><span><b>Cidades da equipe</b><small>Gere do GitHub ou de um modelo</small></span></a>
+          ${manda ? '<div class="cartao" id="tickets"></div>' : ''}
+        </div>
+      </div>`;
+    const nomeEq = $('#nome-eq'); if (nomeEq) nomeEq.addEventListener('change', async () => { try { await api('PATCH', `/api/equipes/${id}`, { nome: nomeEq.value }); avisar('Nome salvo.'); carregar(id); } catch (e) { avisar(e.message); nomeEq.value = d.nome; } });
+    const ap = $('#b-apagar'); if (ap) ap.onclick = async () => { if (!confirm(`Apagar a equipe ${d.nome}? Todos perdem acesso à conversa dela.`)) return; await api('DELETE', `/api/equipes/${id}`); avisar('Equipe apagada.'); S.aberta = null; carregar(null); };
+    const se = $('#b-sair-eq'); if (se) se.onclick = async () => { if (!confirm(`Sair da equipe ${d.nome}?`)) return; await api('DELETE', `/api/equipes/${id}/membros/${S.eu.id}`); avisar('Você saiu da equipe.'); S.aberta = null; carregar(null); };
+    $$('[data-acao]', $('#membros')).forEach(b => b.onclick = () => acao(b.dataset.acao, +b.dataset.u, b.dataset.nome));
+    if (manda) { ligarBusca(); desenharTickets(id); }
+  }
+  function membro(m, d) {
+    const eu = m.id === S.eu.id, euDono = d.meuPapel === 'dono', euAdmin = d.meuPapel === 'admin', a = [];
+    if (euDono && !eu) { a.push(m.papel === 'admin' ? `<button class="btn fantasma" data-acao="membro" data-u="${m.id}" data-nome="${esc(m.nome)}">Tirar admin</button>` : `<button class="btn fantasma" data-acao="admin" data-u="${m.id}" data-nome="${esc(m.nome)}">Tornar admin</button>`);
+      a.push(`<button class="btn fantasma" data-acao="dono" data-u="${m.id}" data-nome="${esc(m.nome)}">Passar a equipe</button>`); }
+    if (!eu && m.papel !== 'dono' && (euDono || (euAdmin && m.papel === 'membro'))) a.push(`<button class="btn fantasma perigo" data-acao="remover" data-u="${m.id}" data-nome="${esc(m.nome)}">Remover</button>`);
+    return `<div class="membro"><i class="avatar" style="--c:${cor(m.id)}">${esc(iniciais(m.nome))}</i><span>${esc(m.nome)}${eu ? ' <small style="display:inline">(você)</small>' : ''}<small>@${esc(m.nick)}</small></span>
+      ${m.papel !== 'membro' ? `<span class="etiqueta ${m.papel}" style="flex:none">${papelTxt[m.papel]}</span>` : ''}<div class="menu">${a.join('')}</div></div>`;
+  }
+  async function acao(qual, u, nome) {
+    const id = S.aberta;
+    try {
+      if (qual === 'remover') { if (!confirm(`Tirar ${nome} da equipe?`)) return; await api('DELETE', `/api/equipes/${id}/membros/${u}`); avisar(`${nome} saiu da equipe.`); }
+      else { if (qual === 'dono' && !confirm(`Passar a equipe para ${nome}? Você vira admin.`)) return; await api('PATCH', `/api/equipes/${id}/membros/${u}`, { papel: qual }); avisar(qual === 'dono' ? `${nome} agora é dono da equipe.` : qual === 'admin' ? `${nome} agora é admin.` : `${nome} agora é membro.`); }
+      carregar(id);
+    } catch (e) { avisar(e.message); }
+  }
+
+  // busca de pessoas pelo nick, com setas e Enter
+  function ligarBusca() {
+    const f = $('#f-add'), campo = f.nick, lista = $('#sugestoes'), erro = $('.adicionar .erro'); let itens = [], sel = -1, t;
+    const fechar = () => { lista.hidden = true; campo.setAttribute('aria-expanded', 'false'); sel = -1; };
+    const marcar = () => $$('button', lista).forEach((b, i) => b.setAttribute('aria-selected', String(i === sel)));
+    campo.addEventListener('input', () => { erro.textContent = ''; clearTimeout(t); const q = campo.value.trim().replace(/^@/, ''); if (!q) return fechar();
+      t = setTimeout(async () => { itens = (await api('GET', `/api/usuarios/busca?q=${encodeURIComponent(q)}`).catch(() => [])).filter(u => !S.detalhe.membros.some(m => m.id === u.id));
+        if (!itens.length) return fechar(); sel = -1;
+        lista.innerHTML = itens.map((u, i) => `<button type="button" role="option" id="sug-${i}" data-nick="${esc(u.nick)}"><i class="avatar" style="--c:${cor(u.id)}">${esc(iniciais(u.nome))}</i><span>${esc(u.nome)} <small>@${esc(u.nick)}</small></span></button>`).join('');
+        lista.hidden = false; campo.setAttribute('aria-expanded', 'true');
+        $$('button', lista).forEach(b => b.onmousedown = (e) => { e.preventDefault(); campo.value = b.dataset.nick; fechar(); f.requestSubmit(); }); }, 160); });
+    campo.addEventListener('keydown', (e) => { if (lista.hidden) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); sel = (sel + (e.key === 'ArrowDown' ? 1 : -1) + itens.length) % itens.length; marcar(); campo.setAttribute('aria-activedescendant', `sug-${sel}`); }
+      else if (e.key === 'Enter' && sel >= 0) { e.preventDefault(); campo.value = itens[sel].nick; fechar(); f.requestSubmit(); }
+      else if (e.key === 'Escape') fechar(); });
+    campo.addEventListener('blur', () => setTimeout(fechar, 120));
+    f.addEventListener('submit', async (ev) => { ev.preventDefault(); const nick = campo.value.trim(); if (!nick) return;
+      try { await api('POST', `/api/equipes/${S.aberta}/membros`, { nick }); avisar(`@${nick.replace(/^@/, '')} entrou na equipe.`); await carregar(S.aberta); $('#f-add').nick.focus(); }
+      catch (e) { erro.textContent = e.message; } });
+  }
+
+  // tempo real: quando alguém mexe na equipe (ou te coloca numa), a página se atualiza sozinha
+  function conectar() { const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
+    ws.onmessage = (ev) => { const m = JSON.parse(ev.data);
+      if (m.t === 'equipe' && m.equipe === S.aberta) carregar(S.aberta);
+      else if (m.t === 'equipe:entrou') { avisar(`Você entrou na equipe ${m.equipe.nome}.`); carregar(S.aberta); }
+      else if (m.t === 'equipe:saiu') { if (m.equipe === S.aberta) S.aberta = null; carregar(S.aberta); } };
+    ws.onclose = () => setTimeout(conectar, 3000); }
+
+  desenharEu(); await carregar(null); conectar();
+})();
+</script>
+</body>
+</html>

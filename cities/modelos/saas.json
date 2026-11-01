@@ -1,0 +1,39 @@
+{
+  "titulo": "SaaS B2B",
+  "resumo": "Plataforma por assinatura: onboarding de clientes, cobrança recorrente, suporte e uma API pública usada por integrações.",
+  "bairros": [
+    { "id": "onboarding", "nome": "Onboarding", "sub": "trial, ativação e conversão", "desc": "Do cadastro gratuito ao primeiro valor entregue e à conversão em plano pago.", "operario": "Conta nova", "cada": 4,
+      "estacoes": [
+        { "id": "ob-cadastro", "nome": "Cadastro", "desc": "E-mail, empresa e senha." },
+        { "id": "ob-trial", "nome": "Trial", "desc": "14 dias com tudo liberado e um guia de primeiros passos." },
+        { "id": "ob-ativado", "nome": "Ativado", "desc": "A conta fez a primeira ação de valor." },
+        { "id": "ob-convertido", "nome": "Convertido", "desc": "Escolheu um plano e cadastrou o cartão.", "chama": ["obCobranca"] } ],
+      "desvios": [ { "id": "ob-d-abandono", "nome": "Abandonou o trial", "de": "ob-trial", "volta": "ob-trial", "p": 0.2, "desc": "Sem uso em 7 dias: entra no e-mail de reengajamento." } ] },
+    { "id": "cobranca", "nome": "Cobrança", "sub": "assinaturas e faturas", "desc": "Renovação mensal, faturas, falhas de pagamento e cancelamentos.", "operario": "Fatura", "cada": 3,
+      "estacoes": [
+        { "id": "cb-renova", "nome": "Renovação", "desc": "No aniversário da assinatura, a fatura é gerada." },
+        { "id": "cb-cobra", "nome": "Cobrança", "desc": "O gateway tenta cobrar o cartão.", "chama": ["cbGateway"] },
+        { "id": "cb-nota", "nome": "Nota fiscal", "desc": "A NFS-e é emitida e enviada." },
+        { "id": "cb-paga", "nome": "Paga", "desc": "Assinatura renovada por mais um mês." } ],
+      "desvios": [ { "id": "cb-d-falhou", "nome": "Cartão recusado", "de": "cb-cobra", "volta": "cb-cobra", "p": 0.07, "desc": "Nova tentativa em 3 dias; na terceira falha a conta é suspensa." } ] },
+    { "id": "suporte", "nome": "Suporte", "sub": "tickets e SLA", "desc": "Atendimento aos clientes: triagem, resposta e escalonamento para a engenharia.", "operario": "Ticket", "cada": 3,
+      "estacoes": [
+        { "id": "sp-aberto", "nome": "Aberto", "desc": "Chegou pelo chat, e-mail ou formulário.", "chama": ["spHelpdesk"] },
+        { "id": "sp-triagem", "nome": "Triagem", "desc": "Prioridade e dono definidos pelo SLA." },
+        { "id": "sp-resolvido", "nome": "Resolvido", "desc": "Resposta enviada e cliente satisfeito." } ],
+      "desvios": [ { "id": "sp-d-bug", "nome": "Escalado para engenharia", "de": "sp-triagem", "volta": "sp-triagem", "p": 0.15, "desc": "É bug: vira issue e o ticket espera a correção." } ] },
+    { "id": "api", "nome": "API pública", "sub": "chaves, limites e webhooks", "desc": "O que as integrações dos clientes usam: autenticação por chave, limite por plano e webhooks de eventos.", "operario": "Requisição", "cada": 1.5,
+      "estacoes": [
+        { "id": "ap-auth", "nome": "Autenticação", "desc": "Valida a chave e o plano." },
+        { "id": "ap-limite", "nome": "Limite", "desc": "Conta as requisições do minuto." },
+        { "id": "ap-handler", "nome": "Processamento", "desc": "Executa a operação pedida." },
+        { "id": "ap-webhook", "nome": "Webhook", "desc": "Avisa o sistema do cliente do que mudou.", "chama": ["apCliente"] } ],
+      "desvios": [ { "id": "ap-d-429", "nome": "Limite estourado", "de": "ap-limite", "volta": "ap-limite", "p": 0.05, "desc": "Responde 429 e pede para tentar depois." } ] }
+  ],
+  "externos": [
+    { "id": "gateway", "nome": "Gateway de pagamento", "subn": "Stripe", "entra": "Cobrança", "sai": "Aprovado ou recusado", "desc": "Cobra os cartões das assinaturas." },
+    { "id": "helpdesk", "nome": "Helpdesk", "subn": "Zendesk", "entra": "Tickets", "sai": "Respostas", "desc": "Onde o suporte conversa com o cliente." },
+    { "id": "cliente", "nome": "Sistema do cliente", "entra": "Webhooks", "sai": "Chamadas à API", "desc": "As integrações que os clientes constroem." }
+  ],
+  "rotas": [ { "id": "obCobranca", "de": "ob-convertido", "para": "cb-renova" }, { "id": "cbGateway", "de": "cb-cobra", "para": "gateway" }, { "id": "spHelpdesk", "de": "sp-aberto", "para": "helpdesk" }, { "id": "apCliente", "de": "ap-webhook", "para": "cliente" } ]
+}

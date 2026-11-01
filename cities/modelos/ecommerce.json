@@ -1,0 +1,32 @@
+{
+  "titulo": "Loja online",
+  "resumo": "Uma loja virtual: pedidos, pagamentos e logística, com gateway de pagamento e transportadora de fora.",
+  "bairros": [
+    { "id": "pedidos", "nome": "Pedidos", "sub": "carrinho, checkout e confirmação", "desc": "Onde o pedido nasce: o cliente monta o carrinho, fecha o checkout e recebe a confirmação.", "operario": "Pedido", "cada": 2.4,
+      "estacoes": [
+        { "id": "pd-carrinho", "nome": "Carrinho", "desc": "O cliente escolhe os produtos e o preço é calculado." },
+        { "id": "pd-checkout", "nome": "Checkout", "desc": "Endereço, frete e forma de pagamento." },
+        { "id": "pd-estoque", "nome": "Reserva de estoque", "desc": "Os itens ficam reservados enquanto o pagamento é aprovado." },
+        { "id": "pd-confirmado", "nome": "Pedido confirmado", "desc": "O pedido está aceito e segue para pagamento e entrega.", "chama": ["pdPagamento"] } ],
+      "desvios": [ { "id": "pd-d-estoque", "nome": "Sem estoque", "de": "pd-estoque", "volta": "pd-checkout", "p": 0.08, "desc": "Um item acabou: o cliente volta ao checkout para trocar ou remover." } ] },
+    { "id": "pagamentos", "nome": "Pagamentos", "sub": "autorização, antifraude e captura", "desc": "Cobra o pedido. A autorização pergunta ao gateway; o antifraude decide a cor do semáforo.", "operario": "Pagamento", "cada": 3,
+      "estacoes": [
+        { "id": "pg-autoriza", "nome": "Autorização", "desc": "Pede ao gateway a autorização do valor.", "chama": ["pgGateway"] },
+        { "id": "pg-antifraude", "nome": "Antifraude", "desc": "Daqui o pagamento sai aprovado, em revisão ou suspeito." },
+        { "id": "pg-captura", "nome": "Captura", "desc": "O valor é efetivamente cobrado." },
+        { "id": "pg-conciliado", "nome": "Conciliado", "desc": "O pagamento bate com o extrato do gateway." } ],
+      "desvios": [ { "id": "pg-d-recusado", "nome": "Cartão recusado", "de": "pg-autoriza", "volta": "pg-autoriza", "p": 0.1, "desc": "O banco recusou. O cliente tenta outro cartão." } ] },
+    { "id": "logistica", "nome": "Logística", "sub": "separação, despacho e entrega", "desc": "Do estoque até a porta do cliente.", "operario": "Pacote", "cada": 3.5,
+      "estacoes": [
+        { "id": "lg-separa", "nome": "Separação", "desc": "Os itens são retirados das prateleiras." },
+        { "id": "lg-embala", "nome": "Embalagem", "desc": "O pacote é fechado e etiquetado." },
+        { "id": "lg-despacho", "nome": "Despacho", "desc": "O pacote é entregue à transportadora.", "chama": ["lgTransp"] },
+        { "id": "lg-entregue", "nome": "Entregue", "desc": "O cliente recebeu." } ],
+      "desvios": [ { "id": "lg-d-endereco", "nome": "Endereço não encontrado", "de": "lg-despacho", "volta": "lg-despacho", "p": 0.06, "desc": "A transportadora não achou o endereço; o atendimento confirma com o cliente." } ] }
+  ],
+  "externos": [
+    { "id": "gateway", "nome": "Gateway de pagamento", "entra": "Pedido de autorização", "sai": "Aprovado ou recusado", "desc": "O serviço que fala com os bancos e bandeiras." },
+    { "id": "transportadora", "nome": "Transportadora", "entra": "Pacote etiquetado", "sai": "Status de entrega", "desc": "Leva o pacote até o cliente." }
+  ],
+  "rotas": [ { "id": "pdPagamento", "de": "pd-confirmado", "para": "pg-autoriza" }, { "id": "pgGateway", "de": "pg-autoriza", "para": "gateway" }, { "id": "lgTransp", "de": "lg-despacho", "para": "transportadora" } ]
+}

@@ -1,0 +1,7 @@
+.git
+.github
+**/node_modules
+servidor/dados
+bridge/config.json
+.DS_Store
+e2e

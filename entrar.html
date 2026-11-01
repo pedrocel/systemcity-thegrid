@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entrar · SystemCity</title>
+<meta name="description" content="Entre ou crie sua conta no SystemCity.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=Red+Hat+Display:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site/estilo.css">
+<style>
+  main { min-height: calc(100vh - 64px); display: grid; grid-template-columns: 1.1fr 1fr; align-items: center; gap: 48px; padding: 40px 0; }
+  .lado h1 { font-size: clamp(32px, 4.4vw, 52px); font-weight: 800; letter-spacing: -.01em; }
+  .lado h1 span { color: var(--neon); text-shadow: 0 0 30px rgba(55, 230, 255, .45); }
+  .lado p { color: var(--tinta-2); font-size: 17px; max-width: 46ch; margin: 18px 0 28px; }
+  .lado ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  .lado li { display: flex; gap: 12px; align-items: flex-start; color: var(--tinta); }
+  .lado li i { width: 22px; height: 22px; border-radius: 6px; flex: none; display: grid; place-items: center; background: rgba(55, 230, 255, .12); color: var(--neon); font-style: normal; font-size: 13px; margin-top: 1px; }
+  .cartao { padding: 28px; box-shadow: 0 30px 80px rgba(0, 0, 0, .45), 0 0 0 1px rgba(55, 230, 255, .06); }
+  .abas { display: grid; grid-template-columns: 1fr 1fr; background: rgba(2, 6, 12, .6); border: 1px solid var(--linha); border-radius: 11px; padding: 4px; margin-bottom: 22px; }
+  .abas button { background: none; border: 0; color: var(--tinta-2); font: 600 14.5px var(--texto); padding: 10px; border-radius: 8px; cursor: pointer; }
+  .abas button[aria-selected="true"] { background: var(--vidro-2); color: var(--tinta); box-shadow: inset 0 0 0 1px var(--linha-forte); }
+  .abas button:focus-visible { outline: 2px solid var(--neon); }
+  form { display: grid; gap: 14px; }
+  form .btn { margin-top: 4px; }
+  .linha2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .rodape-form { color: var(--tinta-3); font-size: 12.5px; text-align: center; margin: 16px 0 0; }
+  .nick-status { font-size: 12px; min-height: 16px; }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; gap: 28px; } .lado ul { display: none; } .lado p { margin-bottom: 0; } }
+  @media (max-width: 460px) { .linha2 { grid-template-columns: 1fr; } .cartao { padding: 20px; } }
+.sociais { display: grid; gap: 8px; margin-bottom: 14px; } .sociais .social { text-align: center; text-decoration: none; } .sociais .ou { text-align: center; color: var(--tinta-2); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="fundo" aria-hidden="true"></div>
+<header class="nav"><div class="envelope">
+  <a class="marca" href="/"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="14" width="7" height="15" rx="1.5" fill="none" stroke="#37e6ff" stroke-width="2"/><rect x="12.5" y="4" width="7" height="25" rx="1.5" fill="none" stroke="#37e6ff" stroke-width="2"/><rect x="22" y="10" width="7" height="19" rx="1.5" fill="none" stroke="#a78bfa" stroke-width="2"/></svg><span>System<b>City</b></span></a>
+  <div class="nav-acoes"><a class="btn fantasma" href="/">Voltar ao início</a></div>
+</div></header>
+
+<main class="envelope">
+  <section class="lado">
+    <h1>Sua arquitetura,<br><span>viva e em equipe.</span></h1>
+    <p>Entre para conversar com o time, marcar reuniões que viram atas com atividades e correr no The Grid na daily.</p>
+    <ul>
+      <li><i>◆</i>Cidade 3D do seu sistema, com dados ao vivo</li>
+      <li><i>◆</i>Chat, chamadas de vídeo e atas geradas pelo Claude</li>
+      <li><i>◆</i>Equipes: adicione as pessoas pelo nick</li>
+    </ul>
+  </section>
+
+  <section class="cartao" aria-labelledby="tit-form">
+    <h2 id="tit-form" class="so-leitor">Entrar ou criar conta</h2>
+    <div class="abas" role="tablist">
+      <button role="tab" id="aba-entrar" aria-selected="true" aria-controls="f-entrar">Entrar</button>
+      <button role="tab" id="aba-criar" aria-selected="false" aria-controls="f-criar">Criar conta</button>
+    </div>
+
+    <div class="sociais" id="sociais" hidden></div>
+    <form id="f-entrar" novalidate>
+      <label class="campo">E-mail ou nick<input name="email" autocomplete="username" required autofocus></label>
+      <label class="campo">Senha<input name="senha" type="password" autocomplete="current-password" required></label>
+      <p class="erro" role="alert"></p>
+      <button class="btn primario grande">Entrar</button>
+      <a class="rodape-form" href="/redefinir.html" style="color:var(--tinta-2)">Esqueci a senha</a>
+    </form>
+
+    <form id="f-criar" novalidate hidden>
+      <div class="linha2">
+        <label class="campo">Nome<input name="nome" autocomplete="name" maxlength="60" required></label>
+        <label class="campo prefixo">Nick<input name="nick" autocomplete="off" maxlength="20" pattern="[a-z0-9_.]{3,20}" required spellcheck="false" autocapitalize="off"></label>
+      </div>
+      <span class="nick-status" id="nick-status" aria-live="polite"></span>
+      <label class="campo">E-mail<input name="email" type="email" autocomplete="email" required></label>
+      <label class="campo">Senha<input name="senha" type="password" autocomplete="new-password" minlength="8" required><small>Pelo menos 8 caracteres.</small></label>
+      <p class="erro" role="alert"></p>
+      <button class="btn primario grande">Criar conta</button>
+      <p class="rodape-form">O nick é como as pessoas te acham para te colocar numa equipe.</p>
+    </form>
+  </section>
+</main>
+
+<script src="site/sessao.js"></script>
+<script>
+(() => {
+  const params = new URLSearchParams(location.search), destino = /^\/[\w./?=&%-]*$/.test(params.get('volta') || '') ? params.get('volta') : '/cidades.html';   // só volta para dentro do próprio site
+  const fEntrar = document.getElementById('f-entrar'), fCriar = document.getElementById('f-criar');
+  function aba(criar) {
+    fEntrar.hidden = criar; fCriar.hidden = !criar;
+    document.getElementById('aba-entrar').setAttribute('aria-selected', String(!criar)); document.getElementById('aba-criar').setAttribute('aria-selected', String(criar));
+    (criar ? fCriar.nome : fEntrar.email).focus(); history.replaceState(null, '', criar ? '#criar' : location.pathname + location.search);
+  }
+  document.getElementById('aba-entrar').onclick = () => aba(false); document.getElementById('aba-criar').onclick = () => aba(true);
+  if (location.hash === '#criar') aba(true);
+
+  SC.eu().then(eu => { if (eu) location.replace(destino); });   // já logado: segue direto
+
+  // nick: sugere a partir do nome e normaliza enquanto digita
+  const nick = fCriar.nick, status = document.getElementById('nick-status'); let mexeuNoNick = false;
+  const limpar = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/^@/, '').replace(/\s+/g, '.').replace(/[^a-z0-9_.]/g, '').slice(0, 20);
+  fCriar.nome.addEventListener('input', () => { if (!mexeuNoNick) { nick.value = limpar(fCriar.nome.value.split(' ').slice(0, 2).join('.')); conferir(); } });
+  nick.addEventListener('input', () => { mexeuNoNick = true; const v = limpar(nick.value); if (v !== nick.value) nick.value = v; conferir(); });
+  function conferir() { const v = nick.value; status.className = 'nick-status';
+    status.textContent = !v ? '' : v.length < 3 ? 'Pelo menos 3 caracteres.' : `Você vai aparecer como @${v}`; if (v.length >= 3) status.classList.add('ok'); }
+
+  async function enviar(form, rota, corpo) {
+    const erro = form.querySelector('.erro'), btn = form.querySelector('button.btn'); erro.textContent = ''; btn.disabled = true;
+    try { await SC.api('POST', rota, corpo); location.assign(destino); }
+    catch (e) { erro.textContent = e.status ? e.message : 'Sem conexão com o servidor.'; btn.disabled = false; }
+  }
+  fEntrar.addEventListener('submit', (ev) => { ev.preventDefault(); enviar(fEntrar, '/api/entrar', { email: fEntrar.email.value, senha: fEntrar.senha.value }); });
+  fCriar.addEventListener('submit', (ev) => { ev.preventDefault(); enviar(fCriar, '/api/cadastro', { nome: fCriar.nome.value, nick: nick.value, email: fCriar.email.value, senha: fCriar.senha.value }); });
+})();
+
+  // Google e Microsoft só aparecem quando o servidor tem as chaves deles
+  fetch('/api/provedores').then(r => r.json()).then(ps => { if (!ps.length) return; const el = document.getElementById('sociais');
+    el.innerHTML = ps.map(p => `<a class="btn grande social" href="/auth/${p.id}">Entrar com ${p.nome}</a>`).join('') + '<span class="ou">ou</span>'; el.hidden = false; }).catch(() => {});
+  { const erro = new URLSearchParams(location.search).get('erro'); if (erro) document.querySelector('#f-entrar .erro').textContent = erro; }
+</script>
+</body>
+</html>

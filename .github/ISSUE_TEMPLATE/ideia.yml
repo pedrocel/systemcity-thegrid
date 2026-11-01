@@ -1,0 +1,16 @@
+name: Ideia ou recurso novo
+description: Sugira uma melhoria
+labels: [ideia]
+body:
+  - type: textarea
+    id: problema
+    attributes: { label: Qual problema isso resolve }
+    validations: { required: true }
+  - type: textarea
+    id: proposta
+    attributes: { label: Como você imagina }
+  - type: checkboxes
+    id: ajuda
+    attributes:
+      label: Contribuição
+      options: [{ label: Quero ajudar a implementar }]

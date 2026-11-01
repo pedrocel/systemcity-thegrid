@@ -1,0 +1,44 @@
+# Testes do servidor e do navegador em todo push e Pull Request.
+name: Testes
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  servidor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: servidor/package-lock.json
+      - run: npm ci
+        working-directory: servidor
+      - run: npm test
+        working-directory: servidor
+      - name: Sintaxe dos motores
+        run: for f in engine/*.js; do node --check "$f"; done
+
+  navegador:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+        working-directory: servidor
+      - run: npm install && npx playwright install --with-deps chromium
+        working-directory: e2e
+      - run: npx playwright test
+        working-directory: e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: rastros-playwright
+          path: e2e/test-results
+          retention-days: 7

@@ -1,0 +1,33 @@
+{
+  "titulo": "Fintech",
+  "resumo": "Conta digital com cadastro, transferências Pix, cartão e antifraude. Fala com o Banco Central, com a bandeira do cartão e com o bureau de crédito.",
+  "bairros": [
+    { "id": "contas", "nome": "Contas", "sub": "cadastro, KYC e abertura", "desc": "Abre a conta do cliente: cadastro, validação de documentos e análise de crédito.", "operario": "Cadastro", "cada": 4,
+      "estacoes": [
+        { "id": "ct-cadastro", "nome": "Cadastro", "desc": "O cliente informa dados e documentos pelo app." },
+        { "id": "ct-kyc", "nome": "KYC", "desc": "Validação de identidade e checagem em listas restritivas.", "chama": ["ctBureau"] },
+        { "id": "ct-credito", "nome": "Análise de crédito", "desc": "Define limite inicial com o score do bureau." },
+        { "id": "ct-aberta", "nome": "Conta aberta", "desc": "A conta recebe agência, número e chave Pix." } ],
+      "desvios": [ { "id": "ct-d-doc", "nome": "Documento ilegível", "de": "ct-kyc", "volta": "ct-cadastro", "p": 0.1, "desc": "A foto do documento não passou: o cliente envia de novo." } ] },
+    { "id": "pix", "nome": "Pix", "sub": "envio, recebimento e liquidação", "desc": "Transferências instantâneas: validação, antifraude, liquidação no SPI e aviso ao cliente.", "operario": "Transferência", "cada": 2,
+      "estacoes": [
+        { "id": "px-pedido", "nome": "Pedido", "desc": "O cliente informa a chave e o valor." },
+        { "id": "px-antifraude", "nome": "Antifraude", "desc": "Score de risco em tempo real; pode exigir confirmação." },
+        { "id": "px-spi", "nome": "Liquidação SPI", "desc": "Envio ao sistema do Banco Central.", "chama": ["pxBacen"] },
+        { "id": "px-concluido", "nome": "Concluído", "desc": "Saldo atualizado e comprovante enviado." } ],
+      "desvios": [ { "id": "px-d-rejeitado", "nome": "Rejeitado pelo SPI", "de": "px-spi", "volta": "px-pedido", "p": 0.05, "desc": "Chave inválida ou conta de destino bloqueada." } ] },
+    { "id": "cartao", "nome": "Cartão", "sub": "autorização e faturamento", "desc": "Compras no cartão: autorização com a bandeira, lançamento na fatura e cobrança.", "operario": "Compra", "cada": 2.5,
+      "estacoes": [
+        { "id": "cd-autoriza", "nome": "Autorização", "desc": "A bandeira pergunta se a compra pode ser aprovada.", "chama": ["cdBandeira"] },
+        { "id": "cd-lanca", "nome": "Lançamento", "desc": "A compra entra na fatura aberta." },
+        { "id": "cd-fatura", "nome": "Fatura", "desc": "Fechamento mensal e emissão do boleto." },
+        { "id": "cd-pago", "nome": "Pagamento", "desc": "A fatura é paga e o limite volta." } ],
+      "desvios": [ { "id": "cd-d-negada", "nome": "Compra negada", "de": "cd-autoriza", "volta": "cd-autoriza", "p": 0.08, "desc": "Sem limite ou suspeita de fraude." } ] }
+  ],
+  "externos": [
+    { "id": "bacen", "nome": "Banco Central", "subn": "SPI / DICT", "entra": "Ordens Pix", "sai": "Liquidação", "desc": "O sistema de pagamentos instantâneos e o diretório de chaves." },
+    { "id": "bandeira", "nome": "Bandeira do cartão", "subn": "Visa / Master", "entra": "Pedido de autorização", "sai": "Aprovado ou negado", "desc": "A rede que conecta o cartão ao lojista." },
+    { "id": "bureau", "nome": "Bureau de crédito", "subn": "Serasa", "entra": "CPF", "sai": "Score e restrições", "desc": "Histórico de crédito do cliente." }
+  ],
+  "rotas": [ { "id": "pxBacen", "de": "px-spi", "para": "bacen" }, { "id": "cdBandeira", "de": "cd-autoriza", "para": "bandeira" }, { "id": "ctBureau", "de": "ct-kyc", "para": "bureau" } ]
+}

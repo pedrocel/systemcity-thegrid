@@ -1,0 +1,9 @@
+{
+  "porta": 4300,
+  "mcp": {
+    "loja": { "command": "node", "args": ["demo-mcp.mjs"] }
+  },
+  "coletas": [
+    { "mcp": "loja", "ferramenta": "pedidos_recentes", "cada": 3000, "mapa": "mapas/pedidos.mjs" }
+  ]
+}

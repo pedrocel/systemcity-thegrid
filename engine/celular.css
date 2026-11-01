@@ -1,0 +1,31 @@
+/* SystemCity no celular: a barra vira uma faixa de botões que rola de lado, os painéis ocupam a tela, e o The Grid ganha controles de toque. */
+@media (max-width: 760px) {
+  .barra { left: 0; right: 0; bottom: 0; border-radius: 14px 14px 0 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); gap: 6px; scroll-snap-type: x proximity; }
+  .barra::-webkit-scrollbar { display: none; }
+  .barra > * { flex: none; scroll-snap-align: start; }
+  .barra .rotulo-seg, .barra .seg[aria-label="Ritmo da simulação"] { display: none; }
+  .barra .bt { padding: 8px 12px; font-size: 13px; }
+  .topo { top: 10px; left: 12px; } .topo h1 { font-size: 18px; } .topo-links { font-size: 12px; }
+  .grid-destaque { top: auto; bottom: 66px; font-size: 12px; padding: 7px 14px; }
+  /* painéis: tela cheia acima da barra */
+  .enc, .enc.ask, .enc.inc, .enc.ag { left: 0; right: 0; top: 0; bottom: 56px; width: auto; border-radius: 0 0 14px 14px; }
+  .tour, .replay { left: 0; right: 0; transform: none; width: auto; bottom: 56px; border-radius: 14px 14px 0 0; }
+  .tour p { font-size: 15px; } .tour-ctl .bt { padding: 6px 9px; font-size: 12px; }
+  .rp-cab { gap: 6px; } .rp-cab select, .rp-cab .seg { order: 3; }
+  .inc-alerta { top: 8px; left: 8px; right: 8px; transform: none; max-width: none; }
+  .corredor { bottom: 70px; left: 8px; right: 8px; transform: none; }
+  .enc-chamada .enc-videos { grid-template-columns: 1fr 1fr; padding: 0 8px; }
+  .enc-chamada .enc-controles .bt { padding: 8px 10px; font-size: 13px; }
+  .ficha { bottom: 66px !important; }
+}
+/* The Grid com toque: volante à esquerda, acelerador, freio e turbo à direita (só em tela de toque, só na pista) */
+.grid-toque { position: fixed; inset: auto 0 0 0; z-index: 46; display: none; justify-content: space-between; align-items: flex-end; padding: 0 14px calc(18px + env(safe-area-inset-bottom)); pointer-events: none; }
+body.pista.toque .grid-toque { display: flex; }
+body.pista.toque .grid-acoes { bottom: auto; top: 12px; left: auto; right: 12px; transform: none; }
+.grid-toque .volante { display: flex; gap: 10px; }
+.grid-toque button { pointer-events: auto; width: 74px; height: 74px; border-radius: 50%; border: 2px solid rgba(55, 230, 255, .55); background: rgba(1, 10, 20, .55); color: #e8f8ff; font: 700 26px var(--titulo); touch-action: none; user-select: none; -webkit-user-select: none; }
+.grid-toque button.on { background: rgba(55, 230, 255, .35); }
+.grid-toque .pedais { display: grid; grid-template-columns: 74px 74px; gap: 10px; }
+.grid-toque .turbo { border-color: #ff8a3c; color: #ff8a3c; font-size: 13px; letter-spacing: .1em; }
+@media (max-width: 760px) { .grid-hud { top: 8px; left: 8px; gap: 4px; max-width: calc(100vw - 16px); } .grid-hud > div { padding: 4px 8px; } .grid-hud b { font-size: 16px; } .grid-placar { top: 74px; font-size: 12px; min-width: 150px; } .grid-vez { top: auto; bottom: 110px; } .grid-caixa { padding: 18px; } .grid-titulo { font-size: 28px; } }
+@media (max-width: 760px) { .grid-tela.lateral { place-items: center; background: rgba(1, 3, 10, .55); } .grid-tela.lateral .grid-caixa, .grid-caixa { width: calc(100vw - 24px); margin: 0; } body.pista.toque .grid-tela.lateral { align-items: start; padding-top: 60px; } }

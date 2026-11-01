@@ -1,0 +1,76 @@
+/* SystemCity — estilo das páginas do site (landing, entrar, equipes). Neon ciano sobre noite, como a cidade e o The Grid. */
+:root {
+  --noite: #04070d; --noite-2: #08101c; --vidro: rgba(10, 18, 32, .78); --vidro-2: rgba(16, 28, 48, .9);
+  --linha: rgba(120, 190, 230, .16); --linha-forte: rgba(120, 190, 230, .34);
+  --tinta: #e3eef9; --tinta-2: #93a8c0; --tinta-3: #5f748d;
+  --neon: #37e6ff; --neon-2: #3fa9f5; --laranja: #ff8a3c; --verde: #5fd38d; --rosa: #f472b6; --roxo: #a78bfa; --rubi: #ff5d6c; --ouro: #ffd24a;
+  --titulo: "Red Hat Display", "Avenir Next", "Segoe UI", sans-serif;
+  --texto: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --raio: 14px; --largura: 1160px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--noite); color: var(--tinta); font-family: var(--texto); font-size: 16px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: var(--neon); }
+img { max-width: 100%; display: block; }
+h1, h2, h3 { font-family: var(--titulo); line-height: 1.1; margin: 0; }
+.envelope { width: min(var(--largura), calc(100% - 32px)); margin: 0 auto; }
+.so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* fundo: grade em perspectiva e brilho, sem imagem */
+.fundo { position: fixed; inset: 0; z-index: -1; pointer-events: none; background:
+  radial-gradient(ellipse 80% 50% at 50% -10%, rgba(55, 230, 255, .18), transparent 60%),
+  radial-gradient(ellipse 60% 40% at 90% 30%, rgba(167, 139, 250, .1), transparent 60%), var(--noite); }
+.fundo::after { content: ''; position: absolute; left: -50%; right: -50%; bottom: -10%; height: 60%; transform: perspective(500px) rotateX(62deg); transform-origin: bottom;
+  background-image: linear-gradient(rgba(55, 230, 255, .14) 1px, transparent 1px), linear-gradient(90deg, rgba(55, 230, 255, .14) 1px, transparent 1px); background-size: 56px 56px;
+  mask-image: linear-gradient(to top, #000 0%, transparent 85%); -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 85%); animation: grade 6s linear infinite; }
+@keyframes grade { to { background-position: 0 56px; } }
+
+/* navegação */
+.nav { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); background: rgba(4, 7, 13, .7); border-bottom: 1px solid var(--linha); }
+.nav .envelope { display: flex; align-items: center; gap: 24px; height: 64px; }
+.marca { display: flex; align-items: center; gap: 10px; color: var(--tinta); text-decoration: none; font-family: var(--titulo); font-weight: 800; font-size: 19px; letter-spacing: .01em; }
+.marca svg { width: 26px; height: 26px; }
+.marca b { color: var(--neon); font-weight: 800; }
+.nav-links { display: flex; gap: 22px; margin-left: 12px; }
+.nav-links a { color: var(--tinta-2); text-decoration: none; font-size: 14.5px; }
+.nav-links a:hover, .nav-links a:focus-visible { color: var(--tinta); }
+.nav-acoes { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+@media (max-width: 760px) { .nav-links { display: none; } }
+
+/* botões */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; border-radius: 10px; border: 1px solid var(--linha-forte); background: rgba(16, 28, 48, .6);
+  color: var(--tinta); font: 600 14.5px/1.2 var(--texto); text-decoration: none; cursor: pointer; transition: transform .15s, background .15s, border-color .15s, box-shadow .15s; white-space: nowrap; }
+.btn:hover { border-color: var(--neon); }
+.btn:focus-visible { outline: 2px solid var(--neon); outline-offset: 2px; }
+.btn:active { transform: translateY(1px); }
+.btn.primario { background: var(--neon); color: #021019; border-color: var(--neon); box-shadow: 0 0 24px rgba(55, 230, 255, .35); }
+.btn.primario:hover { box-shadow: 0 0 36px rgba(55, 230, 255, .6); }
+.btn.grande { padding: 14px 24px; font-size: 16px; border-radius: 12px; }
+.btn.fantasma { background: none; border-color: transparent; color: var(--tinta-2); }
+.btn.fantasma:hover { color: var(--tinta); border-color: var(--linha-forte); }
+.btn.perigo { color: var(--rubi); }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+
+/* cartões e formulários */
+.cartao { background: var(--vidro); border: 1px solid var(--linha); border-radius: var(--raio); padding: 24px; }
+.campo { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; color: var(--tinta-2); }
+.campo input { background: rgba(2, 6, 12, .7); border: 1px solid var(--linha-forte); border-radius: 10px; color: var(--tinta); font: 15px var(--texto); padding: 11px 13px; transition: border-color .15s, box-shadow .15s; }
+.campo input:focus-visible { outline: none; border-color: var(--neon); box-shadow: 0 0 0 3px rgba(55, 230, 255, .2); }
+.campo small { color: var(--tinta-3); font-size: 12px; }
+.campo.prefixo { position: relative; }
+.campo.prefixo input { padding-left: 30px; }
+.campo.prefixo::before { content: '@'; position: absolute; left: 13px; bottom: 11px; color: var(--tinta-3); font-size: 15px; }
+.erro { color: var(--rubi); font-size: 13.5px; min-height: 20px; margin: 0; }
+.ok { color: var(--verde); font-size: 13.5px; }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font: 700 13px var(--texto); color: #04101c; background: var(--c, var(--neon)); flex: none; }
+.etiqueta { display: inline-block; font: 600 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--linha-forte); color: var(--tinta-2); }
+.etiqueta.dono { color: var(--ouro); border-color: rgba(255, 210, 74, .4); }
+.etiqueta.admin { color: var(--roxo); border-color: rgba(167, 139, 250, .4); }
+.aviso { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 20px); opacity: 0; z-index: 50; padding: 12px 18px; border-radius: 10px; background: var(--vidro-2); border: 1px solid var(--linha-forte); transition: .25s; font-size: 14px; }
+.aviso.mostra { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
