@@ -30,6 +30,6 @@ jobs:
           # a raiz da demo abre direto a cidade
           printf '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=cidade.html"><title>SystemCity</title><a href="cidade.html">SystemCity</a>\n' > _site/index.html
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
       - id: deploy
         uses: actions/deploy-pages@v4
