@@ -69,7 +69,7 @@ Este repositório é a **edição da comunidade**, de código aberto. O **System
 
 ## Autor
 
-Criado por **Pedro Novais** · [github.com/pedrocel](https://github.com/pedrocel)
+Criado por **Pedro Novais** · [github.com/pedrocel](https://github.com/pedrocel) · [LinkedIn](https://www.linkedin.com/in/pedro-novais-4113a915b/) · [pedronovaisengcp@gmail.com](mailto:pedronovaisengcp@gmail.com)
 
 ## Licença
 

@@ -119,7 +119,7 @@ This repository is the open-source **community edition**. The hosted **SystemCit
 
 ## Author
 
-Designed and built by **Pedro Novais** · [github.com/pedrocel](https://github.com/pedrocel)
+Designed and built by **Pedro Novais** · [github.com/pedrocel](https://github.com/pedrocel) · [LinkedIn](https://www.linkedin.com/in/pedro-novais-4113a915b/) · [pedronovaisengcp@gmail.com](mailto:pedronovaisengcp@gmail.com)
 
 ## License
 
