@@ -50,6 +50,8 @@ cp .env.example .env          # add your ANTHROPIC_API_KEY
 docker compose up -d          # → http://localhost:3000
 ```
 
+The image stays small (about 420 MB) because local embeddings for Ask the code are opt-in: `docker compose build --build-arg RAG_VETORES=1`.
+
 Without Docker (Node ≥ 22.13): `cd servidor && npm install && npm start` → <http://localhost:4400>.
 Without an API key, the server falls back to a local [Claude Code](https://claude.com/claude-code) install (`claude -p`).
 

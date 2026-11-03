@@ -22,14 +22,16 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Montar o site da demo
         run: |
           mkdir _site
           cp -R cidade.html engine cities site _site/
+          # na demo não há servidor: os links do site apontam para o repositório
+          sed -i 's#<a href="/">Início</a><a href="/equipes.html">Equipes</a>#<a href="https://github.com/pedrocel/systemcity-thegrid">GitHub</a>#' _site/cidade.html
           # a raiz da demo abre direto a cidade
           printf '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=cidade.html"><title>SystemCity</title><a href="cidade.html">SystemCity</a>\n' > _site/index.html
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
       - id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

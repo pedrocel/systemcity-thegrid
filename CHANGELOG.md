@@ -2,10 +2,18 @@
 
 All notable changes to the community edition. The format follows [Keep a Changelog](https://keepachangelog.com/) and versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.2.0] · 2026-11-03
 
 ### Added
+- **English city interface:** the city and the example city follow the browser language, with a PT/EN switch and `?lang=`.
 - **Ask the code:** RAG over the repository with cited answers, local embeddings (opt-in with `RAG_VETORES=1`), BM25 fallback and a retrieval evaluation.
+
+### Changed
+- Docker image down from 920 MB to 422 MB: the embeddings model is now a build option.
+- GitHub Actions updated to their current major versions.
+
+### Fixed
+- Live demo links no longer lead to 404 pages.
 
 ## [1.1.0] · 2026-11-01
 

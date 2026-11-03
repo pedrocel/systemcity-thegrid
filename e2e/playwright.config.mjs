@@ -6,7 +6,7 @@ import { join } from 'node:path';
 const PORTA = 4499;
 export default defineConfig({
   testDir: '.', timeout: 60e3, retries: process.env.CI ? 1 : 0, reporter: process.env.CI ? [['github'], ['list']] : 'list',
-  use: { baseURL: `http://127.0.0.1:${PORTA}`, trace: 'retain-on-failure', ...(process.env.CI ? {} : { channel: 'chrome' }) },   // na máquina, o Chrome instalado
+  use: { baseURL: `http://127.0.0.1:${PORTA}`, locale: 'pt-BR', trace: 'retain-on-failure', ...(process.env.CI ? {} : { channel: 'chrome' }) },   // na máquina, o Chrome instalado
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], ...(process.env.CI ? {} : { channel: 'chrome' }) }, testIgnore: /celular/ },
     { name: 'celular', use: { ...devices['Pixel 7'], ...(process.env.CI ? {} : { channel: 'chrome' }) }, testMatch: /celular/ },

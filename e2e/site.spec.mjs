@@ -33,3 +33,8 @@ test('páginas abertas não quebram', async ({ page }) => {
   for (const p of ['/entrar.html', '/redefinir.html']) { await page.goto(p); await expect(page.locator('body')).toBeVisible(); }
   expect(erros).toEqual([]);
 });
+
+test('a cidade fala inglês com ?lang=en e o botão volta para o português', async ({ page }) => {
+  await page.goto('/cidade.html?lang=en'); await expect(page.locator('#b-pausa')).toHaveText('Pause'); await expect(page.locator('.topo-links')).toContainText('Home');
+  await page.locator('.topo-idioma').click(); await expect(page.locator('#b-pausa')).toHaveText('Pausar');
+});
