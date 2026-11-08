@@ -17,6 +17,6 @@
     "node": ">=22.13"
   },
   "optionalDependencies": {
-    "@huggingface/transformers": "3.8.1"
+    "@huggingface/transformers": "4.3.2"
   }
 }
